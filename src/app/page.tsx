@@ -1,103 +1,173 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React from 'react';
+import { Card, Row, Col, Statistic, Typography, Space, Button } from 'antd';
+import {
+  UserOutlined,
+  FileOutlined,
+  CloudUploadOutlined,
+  BarChartOutlined,
+} from '@ant-design/icons';
+import { MainLayout, PageHeader } from '@/components';
+import { useAuth } from '@/hooks/useAuth';
+
+const { Text } = Typography;
+
+const HomePage: React.FC = () => {
+  const { user } = useAuth();
+
+  // 模拟数据
+  const statistics = [
+    {
+      title: '总用户数',
+      value: 1234,
+      icon: <UserOutlined style={{ color: '#1890ff' }} />,
+      color: '#1890ff',
+    },
+    {
+      title: '文件总数',
+      value: 567,
+      icon: <FileOutlined style={{ color: '#52c41a' }} />,
+      color: '#52c41a',
+    },
+    {
+      title: '今日上传',
+      value: 89,
+      icon: <CloudUploadOutlined style={{ color: '#fa8c16' }} />,
+      color: '#fa8c16',
+    },
+    {
+      title: '存储使用',
+      value: 78.5,
+      suffix: '%',
+      icon: <BarChartOutlined style={{ color: '#eb2f96' }} />,
+      color: '#eb2f96',
+    },
+  ];
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <MainLayout>
+      <PageHeader
+        title={`欢迎回来，${user?.nickname || user?.username || '用户'}！`}
+        subtitle="欢迎使用微信小程序后台管理系统"
+        extra={
+          <Button type="primary" icon={<CloudUploadOutlined />}>
+            快速上传
+          </Button>
+        }
+      />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      {/* 统计卡片 */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        {statistics.map((stat, index) => (
+          <Col xs={24} sm={12} lg={6} key={index}>
+            <Card>
+              <Statistic
+                title={stat.title}
+                value={stat.value}
+                suffix={stat.suffix}
+                prefix={stat.icon}
+                valueStyle={{ color: stat.color }}
+              />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      {/* 快速操作 */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={12}>
+          <Card title="快速操作" size="small">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button
+                type="default"
+                block
+                icon={<CloudUploadOutlined />}
+                size="large"
+              >
+                上传文件
+              </Button>
+              <Button type="default" block icon={<UserOutlined />} size="large">
+                用户管理
+              </Button>
+              <Button type="default" block icon={<FileOutlined />} size="large">
+                文件管理
+              </Button>
+            </Space>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card title="系统信息" size="small">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text>系统版本:</Text>
+                <Text strong>v1.0.0</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text>当前用户:</Text>
+                <Text strong>{user?.username || '未知'}</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text>用户角色:</Text>
+                <Text strong>
+                  {user?.role_id === 1 ? '管理员' : '普通用户'}
+                </Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text>服务器状态:</Text>
+                <Text strong style={{ color: '#52c41a' }}>
+                  正常
+                </Text>
+              </div>
+            </Space>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* 最近活动 */}
+      <Card title="最近活动" style={{ marginTop: 16 }}>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
+            <Space>
+              <UserOutlined style={{ color: '#1890ff' }} />
+              <div>
+                <Text strong>用户登录</Text>
+                <br />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {user?.nickname || user?.username} 刚刚登录了系统
+                </Text>
+              </div>
+            </Space>
+          </div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
+            <Space>
+              <FileOutlined style={{ color: '#52c41a' }} />
+              <div>
+                <Text strong>文件上传</Text>
+                <br />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  管理员上传了 3 个文件
+                </Text>
+              </div>
+            </Space>
+          </div>
+          <div style={{ padding: '12px 0' }}>
+            <Space>
+              <BarChartOutlined style={{ color: '#fa8c16' }} />
+              <div>
+                <Text strong>系统更新</Text>
+                <br />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  系统已更新到最新版本 v1.0.0
+                </Text>
+              </div>
+            </Space>
+          </div>
+        </Space>
+      </Card>
+    </MainLayout>
   );
-}
+};
+
+export default HomePage;

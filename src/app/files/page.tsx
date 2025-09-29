@@ -129,7 +129,13 @@ const FilesListPage: React.FC = () => {
 
   const columns: ColumnsType<FileItem> = useMemo(
     () => [
-      { title: 'ID', dataIndex: 'id', width: 80, align: 'center' as const },
+      {
+        title: '序号',
+        dataIndex: 'index',
+        width: 80,
+        align: 'center' as const,
+        render: (_: unknown, __: FileItem, index) => (page - 1) * limit + index + 1,
+      },
       {
         title: '文件名称',
         dataIndex: 'name',
@@ -200,7 +206,7 @@ const FilesListPage: React.FC = () => {
         },
       },
     ],
-    [getStatusTag, handleParse, message, parsingId]
+    [getStatusTag, handleParse, limit, message, page, parsingId]
   );
 
   useEffect(() => {

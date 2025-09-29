@@ -84,14 +84,48 @@ const menuItems: MenuProps['items'] = [
   },
 ];
 
+const menuKeyToPath: Record<string, string> = {
+  dashboard: '/',
+  'file-upload': '/files/upload',
+  'file-list': '/files',
+};
+
+const deriveMenuState = (pathname: string) => {
+  let selectedKey: string = 'dashboard';
+
+  if (pathname.startsWith('/files/upload')) {
+    selectedKey = 'file-upload';
+  } else if (pathname === '/files' || pathname.startsWith('/files')) {
+    selectedKey = 'file-list';
+  }
+
+  const nextOpenKeys = selectedKey.startsWith('file-')
+    ? ['file-management']
+    : [];
+
+  return {
+    selectedKeys: [selectedKey],
+    openKeys: nextOpenKeys,
+  };
+};
+
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const [selectedKeys, setSelectedKeys] = useState(['dashboard']);
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { modal } = App.useApp();
-  const [openKeys, setOpenKeys] = useState<string[]>([]);
+  const getInitialMenuState = React.useCallback(
+    () => deriveMenuState(pathname),
+    [pathname]
+  );
+  const initialMenuState = getInitialMenuState();
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(
+    initialMenuState.selectedKeys
+  );
+  const [openKeys, setOpenKeys] = useState<string[]>(
+    initialMenuState.openKeys
+  );
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -100,36 +134,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   // 处理菜单点击
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     setSelectedKeys([key]);
-    // 路由导航
-    switch (key) {
-      case 'dashboard':
-        router.push('/');
-        break;
-      case 'file-upload':
-        router.push('/files/upload');
-        break;
-      case 'file-list':
-        router.push('/files');
-        break;
-      default:
-        console.log('导航到:', key);
+    const targetPath = menuKeyToPath[key];
+
+    if (targetPath) {
+      router.push(targetPath);
+    } else {
+      console.log('导航到:', key);
     }
   };
 
   // 根据当前路径同步选中菜单与展开的子菜单
-  React.useEffect(() => {
-    let key = 'dashboard';
-    if (pathname.startsWith('/files/upload')) {
-      key = 'file-upload';
-    } else if (pathname === '/files' || pathname.startsWith('/files')) {
-      key = 'file-list';
-    }
-    setSelectedKeys([key]);
-    if (key.startsWith('file-')) {
-      setOpenKeys(['file-management']);
-    } else {
-      setOpenKeys([]);
-    }
+  React.useLayoutEffect(() => {
+    const { selectedKeys: nextSelectedKeys, openKeys: nextOpenKeys } =
+      deriveMenuState(pathname);
+    setSelectedKeys(nextSelectedKeys);
+    setOpenKeys(nextOpenKeys);
   }, [pathname]);
 
   // 处理退出登录

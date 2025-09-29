@@ -88,16 +88,29 @@ const menuKeyToPath: Record<string, string> = {
   dashboard: '/',
   'file-upload': '/files/upload',
   'file-list': '/files',
+  settings: '/settings',
+};
+
+const resolveSelectedMenuKey = (pathname: string): string => {
+  const orderedEntries = Object.entries(menuKeyToPath).sort(
+    (a, b) => b[1].length - a[1].length
+  );
+
+  for (const [key, path] of orderedEntries) {
+    if (!path) continue;
+    if (pathname === path) {
+      return key;
+    }
+    if (path !== '/' && pathname.startsWith(path)) {
+      return key;
+    }
+  }
+
+  return 'dashboard';
 };
 
 const deriveMenuState = (pathname: string) => {
-  let selectedKey: string = 'dashboard';
-
-  if (pathname.startsWith('/files/upload')) {
-    selectedKey = 'file-upload';
-  } else if (pathname === '/files' || pathname.startsWith('/files')) {
-    selectedKey = 'file-list';
-  }
+  const selectedKey = resolveSelectedMenuKey(pathname);
 
   const nextOpenKeys = selectedKey.startsWith('file-')
     ? ['file-management']

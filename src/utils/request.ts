@@ -171,9 +171,9 @@ export const get = <T = unknown>(
 /**
  * POST 请求
  */
-export const post = <T = unknown>(
+export const post = <T = unknown, TBody = unknown>(
   url: string,
-  data?: Record<string, unknown>,
+  data?: TBody,
   config?: RequestConfig
 ): Promise<ApiResponse<T>> => {
   return request
@@ -186,9 +186,9 @@ export const post = <T = unknown>(
 /**
  * PUT 请求
  */
-export const put = <T = unknown>(
+export const put = <T = unknown, TBody = unknown>(
   url: string,
-  data?: Record<string, unknown>,
+  data?: TBody,
   config?: RequestConfig
 ): Promise<ApiResponse<T>> => {
   return request
@@ -201,9 +201,9 @@ export const put = <T = unknown>(
 /**
  * DELETE 请求
  */
-export const del = <T = unknown>(
+export const del = <T = unknown, TParams = Record<string, unknown>>(
   url: string,
-  params?: Record<string, unknown>,
+  params?: TParams,
   config?: RequestConfig
 ): Promise<ApiResponse<T>> => {
   return request

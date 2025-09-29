@@ -35,6 +35,12 @@ export const API_PATHS = {
   FILE_UPLOAD: '/files/upload',
   FILE_PARSE: (id: number) => `/files/${id}/parse`,
   FILE_PARSE_STATUS: (id: number) => `/files/${id}/parse-status`,
+
+  // 系统设置相关
+  MODEL_CONFIGS: '/system/models',
+  MODEL_CONFIG_DETAIL: (id: number) => `/system/models/${id}`,
+  KNOWLEDGE_FORMAT: '/system/knowledge-format',
+  QUESTION_FORMAT: '/system/question-parse-format',
 } as const;
 
 /**

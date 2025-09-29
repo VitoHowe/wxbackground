@@ -6,3 +6,4 @@ export { default as AuthGuard } from './layout/AuthGuard';
 export { default as PageHeader } from './ui/PageHeader';
 export { default as LoadingSpinner } from './ui/LoadingSpinner';
 export { default as EmptyState } from './ui/EmptyState';
+export { default as MarkdownModal } from './editor/MarkdownModal';

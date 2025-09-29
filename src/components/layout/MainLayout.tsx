@@ -10,7 +10,7 @@ import {
   theme,
   Space,
   Typography,
-  Modal,
+  App,
 } from 'antd';
 import {
   MenuFoldOutlined,
@@ -25,10 +25,11 @@ import {
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useAuth } from '@/hooks/useAuth';
+import { usePathname, useRouter } from 'next/navigation';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
-const { confirm } = Modal;
+// 使用 App.useApp() 提供的 modal 修复静态方法的上下文警告
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -87,6 +88,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState(['dashboard']);
   const { user, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { modal } = App.useApp();
+  const [openKeys, setOpenKeys] = useState<string[]>([]);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -95,13 +100,41 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   // 处理菜单点击
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     setSelectedKeys([key]);
-    // 这里可以添加路由导航逻辑
-    console.log('导航到:', key);
+    // 路由导航
+    switch (key) {
+      case 'dashboard':
+        router.push('/');
+        break;
+      case 'file-upload':
+        router.push('/files/upload');
+        break;
+      case 'file-list':
+        router.push('/files');
+        break;
+      default:
+        console.log('导航到:', key);
+    }
   };
+
+  // 根据当前路径同步选中菜单与展开的子菜单
+  React.useEffect(() => {
+    let key = 'dashboard';
+    if (pathname.startsWith('/files/upload')) {
+      key = 'file-upload';
+    } else if (pathname === '/files' || pathname.startsWith('/files')) {
+      key = 'file-list';
+    }
+    setSelectedKeys([key]);
+    if (key.startsWith('file-')) {
+      setOpenKeys(['file-management']);
+    } else {
+      setOpenKeys([]);
+    }
+  }, [pathname]);
 
   // 处理退出登录
   const handleLogout = () => {
-    confirm({
+    modal.confirm({
       title: '确认退出',
       content: '您确定要退出登录吗？',
       okText: '确定',
@@ -181,8 +214,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           theme="dark"
           mode="inline"
           selectedKeys={selectedKeys}
+          openKeys={openKeys}
           items={menuItems}
           onClick={handleMenuClick}
+          onOpenChange={keys => setOpenKeys(keys as string[])}
         />
       </Sider>
 

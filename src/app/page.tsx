@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Button } from 'antd';
+import { Card, Row, Col, Statistic, Typography, Space, Button, App } from 'antd';
 import {
   UserOutlined,
   FileOutlined,
@@ -9,12 +9,15 @@ import {
   BarChartOutlined,
 } from '@ant-design/icons';
 import { MainLayout, PageHeader } from '@/components';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
 const { Text } = Typography;
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();
+  const router = useRouter();
+  const { message } = App.useApp();
 
   // 模拟数据
   const statistics = [
@@ -51,7 +54,11 @@ const HomePage: React.FC = () => {
         title={`欢迎回来，${user?.nickname || user?.username || '用户'}！`}
         subtitle="欢迎使用微信小程序后台管理系统"
         extra={
-          <Button type="primary" icon={<CloudUploadOutlined />}>
+          <Button
+            type="primary"
+            icon={<CloudUploadOutlined />}
+            onClick={() => router.push('/files/upload')}
+          >
             快速上传
           </Button>
         }

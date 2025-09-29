@@ -1,5 +1,5 @@
 import axios, { AxiosResponse, AxiosError } from 'axios';
-import { message } from 'antd';
+import { messageApi } from '@/utils/antdMessage';
 import { API_CONFIG, BUSINESS_CODE } from '@/constants/api';
 import type { ApiResponse, RequestConfig } from '@/types';
 
@@ -87,7 +87,7 @@ request.interceptors.response.use(
     // 处理 token 过期
     if (data.code === BUSINESS_CODE.UNAUTHORIZED) {
       removeToken();
-      message.error('登录已过期，请重新登录');
+      messageApi.error?.('登录已过期，请重新登录');
       // 重定向到登录页面
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
@@ -97,7 +97,7 @@ request.interceptors.response.use(
 
     // 显示错误信息
     if (requestConfig?.showError !== false) {
-      message.error(data.message || '请求失败');
+      messageApi.error?.(data.message || '请求失败');
     }
 
     return Promise.reject(new Error(data.message || '请求失败'));
@@ -111,7 +111,7 @@ request.interceptors.response.use(
     // 处理网络错误
     if (!error.response) {
       if (requestConfig?.showError !== false) {
-        message.error('网络连接失败，请检查网络设置');
+        messageApi.error?.('网络连接失败，请检查网络设置');
       }
       return Promise.reject(error);
     }
@@ -145,7 +145,7 @@ request.interceptors.response.use(
     }
 
     if (requestConfig?.showError !== false) {
-      message.error(errorMessage);
+      messageApi.error?.(errorMessage);
     }
 
     return Promise.reject(error);

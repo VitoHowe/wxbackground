@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
-import { ConfigProvider } from 'antd';
+import { App, ConfigProvider } from 'antd';
 import { Geist, Geist_Mono } from 'next/font/google';
 import zhCN from 'antd/locale/zh_CN';
 import { AuthGuard } from '@/components';
+import { AuthProvider } from '@/context/AuthContext';
+import AntdBridge from '@/components/layout/AntdBridge';
 import './globals.css';
 
 const geistSans = Geist({
@@ -53,7 +55,13 @@ export default function RootLayout({
               },
             }}
           >
-            <AuthGuard>{children}</AuthGuard>
+            <App>
+              <AntdBridge>
+                <AuthProvider>
+                  <AuthGuard>{children}</AuthGuard>
+                </AuthProvider>
+              </AntdBridge>
+            </App>
           </ConfigProvider>
         </AntdRegistry>
       </body>

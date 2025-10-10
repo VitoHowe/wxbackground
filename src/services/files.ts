@@ -3,7 +3,7 @@ import { API_PATHS } from '@/constants/api';
 import type { ApiResponse } from '@/types';
 
 export type FileStatus = 'pending' | 'parsing' | 'completed' | 'failed';
-
+export type FileType = 'question_bank' | 'knowledge_base';
 export interface FileItem {
   id: number;
   name: string;
@@ -22,6 +22,7 @@ export interface FileItem {
   type?: string;
   size?: number;
   status?: FileStatus;
+  file_type?: string;
 }
 
 export interface FileListQuery {

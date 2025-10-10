@@ -24,7 +24,7 @@ import {
 import { CalendarOutlined, CloudOutlined, DeleteOutlined, EyeOutlined, RedoOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
-import { FilesService, type FileItem, type FileStatus } from '@/services/files';
+import { FilesService, type FileItem, type FileStatus, type FileType } from '@/services/files';
 import { SystemService } from '@/services/system';
 import type { ModelConfig, ProviderModel } from '@/types';
 
@@ -43,6 +43,11 @@ const STATUS_LABEL: Record<FileStatus, string> = {
   parsing: '解析中',
   completed: '已完成',
   failed: '解析失败',
+};
+
+const FILE_TYPE_LABEL: Record<FileType, string> = {
+  question_bank: '题库',
+  knowledge_base: '知识点',
 };
 
 const formatFileSize = (bytes?: number) => {
@@ -85,6 +90,15 @@ const FilesListPage: React.FC = () => {
       <Tag color={STATUS_COLORS[s]} bordered={false} style={{ paddingInline: 12 }}>
         {STATUS_LABEL[s]}
       </Tag>
+    );
+  }, []);
+
+  const getFileTypeTag = useCallback((s?: FileType) => {
+    if (!s) return '-';
+    return (
+      <Text strong>
+        {FILE_TYPE_LABEL[s]}
+      </Text>
     );
   }, []);
 
@@ -251,6 +265,13 @@ const FilesListPage: React.FC = () => {
             {/* <Text type="secondary" style={{ fontSize: 12 }}>{record.file_original_name || '—'}</Text> */}
           </Space>
         ),
+      },
+      {
+        title: '文件类型',
+        dataIndex: 'file_type',
+        width: 80,
+        align: 'center' as const,
+        render: (value: FileItem['file_type']) => getFileTypeTag(value),
       },
       {
         title: '上传人',

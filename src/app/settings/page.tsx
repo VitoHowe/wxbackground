@@ -13,6 +13,7 @@ import {
   Table,
   Tag,
   Typography,
+  Select,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -56,14 +57,14 @@ const SettingsPage: React.FC = () => {
   const fetchModels = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await SystemService.fetchModelConfigs();
+      const res = await SystemService.fetchProviderConfigs();
       if (res.code === 200 && Array.isArray(res.data)) {
         setModels(res.data);
       } else {
-        message.error(res.message || '获取模型配置失败');
+        message.error(res.message || '获取供应商配置失败');
       }
     } catch (error: unknown) {
-      message.error((error as Error)?.message || '获取模型配置失败');
+      message.error((error as Error)?.message || '获取供应商配置失败');
     } finally {
       setLoading(false);
     }
@@ -73,11 +74,16 @@ const SettingsPage: React.FC = () => {
     void fetchModels();
   }, [fetchModels]);
 
+  const onTypeChange = (value: string) => {
+    form.setFieldValue('type', value);
+  };
+
   const handleOpenModelModal = (model: EditableModel = null) => {
     setEditingModel(model);
     setModelModalOpen(true);
     if (model) {
       form.setFieldsValue({
+        type: model.type,
         name: model.name,
         endpoint: model.endpoint,
         api_key: model.api_key,
@@ -94,6 +100,7 @@ const SettingsPage: React.FC = () => {
     try {
       const values = await form.validateFields();
       const payload: ModelConfigPayload = {
+        type: values.type,
         name: values.name,
         endpoint: values.endpoint,
         api_key: values.api_key,
@@ -103,20 +110,20 @@ const SettingsPage: React.FC = () => {
 
       setModelSubmitting(true);
       const request = editingModel
-        ? SystemService.updateModelConfig(editingModel.id, payload)
-        : SystemService.createModelConfig(payload);
+        ? SystemService.updateProviderConfig(editingModel.id, payload)
+        : SystemService.createProviderConfig(payload);
       const res = await request;
       if (res.code === 200 || res.code === 201) {
-        message.success(editingModel ? '修改模型配置成功' : '新增模型配置成功');
+        message.success(editingModel ? '修改供应商配置成功' : '新增供应商配置成功');
         setModelModalOpen(false);
         setEditingModel(null);
         await fetchModels();
       } else {
-        message.error(res.message || '保存模型配置失败');
+        message.error(res.message || '保存供应商配置失败');
       }
     } catch (error: unknown) {
       if (!(error as { errorFields?: unknown }).errorFields) {
-        message.error((error as Error)?.message || '保存模型配置失败');
+        message.error((error as Error)?.message || '保存供应商配置失败');
       }
     } finally {
       setModelSubmitting(false);
@@ -126,13 +133,13 @@ const SettingsPage: React.FC = () => {
   const handleDeleteModel = (model: ModelConfig) => {
     modal.confirm({
       title: '确认删除',
-      content: `确定要删除模型「${model.name}」吗？`,
+      content: `确定要删除供应商「${model.name}」吗？`,
       okText: '删除',
       okType: 'danger',
       cancelText: '取消',
       async onOk() {
         try {
-          const res = await SystemService.deleteModelConfig(model.id);
+          const res = await SystemService.deleteProviderConfig(model.id);
           if (res.code === 200) {
             message.success('删除成功');
             await fetchModels();
@@ -148,26 +155,26 @@ const SettingsPage: React.FC = () => {
 
   const handleSwitchChange = async (checked: boolean, model: ModelConfig) => {
     try {
-      const res = await SystemService.updateModelConfig(model.id, {
+      const res = await SystemService.updateProviderConfig(model.id, {
         status: checked ? 1 : 0,
       });
       if (res.code === 200) {
-        message.success(`模型已${checked ? '启用' : '停用'}`);
+        message.success(`供应商已${checked ? '启用' : '停用'}`);
         setModels(prev =>
           prev.map(item =>
             item.id === model.id
               ? {
-                  ...item,
-                  status: checked ? 1 : 0,
-                }
+                ...item,
+                status: checked ? 1 : 0,
+              }
               : item
           )
         );
       } else {
-        message.error(res.message || '更新模型状态失败');
+        message.error(res.message || '更新供应商状态失败');
       }
     } catch (error: unknown) {
-      message.error((error as Error)?.message || '更新模型状态失败');
+      message.error((error as Error)?.message || '更新供应商状态失败');
     }
   };
 
@@ -187,14 +194,23 @@ const SettingsPage: React.FC = () => {
         render: (_: unknown, __: ModelConfig, index) => index + 1,
       },
       {
-        title: '模型名称',
-        dataIndex: 'name',
+        title: '供应商类型',
+        dataIndex: 'type',
         width: 200,
+        align: 'center',
         render: value => value || '-',
       },
       {
-        title: '模型地址',
+        title: '供应商名称',
+        dataIndex: 'name',
+        width: 200,
+        align: 'center',
+        render: value => value || '-',
+      },
+      {
+        title: '供应商地址',
         dataIndex: 'endpoint',
+        align: 'center',
         render: value => (
           <Paragraph
             copyable={{ text: value }}
@@ -206,9 +222,10 @@ const SettingsPage: React.FC = () => {
         ),
       },
       {
-        title: '模型密钥',
+        title: '供应商密钥',
         dataIndex: 'api_key',
         width: 240,
+        align: 'center',
         render: value => (
           <Space size={8}>
             <Text code style={{ marginBottom: 0 }}>
@@ -228,6 +245,7 @@ const SettingsPage: React.FC = () => {
         title: '状态',
         dataIndex: 'status',
         width: 160,
+        align: 'center',
         render: (value, record) => (
           <Space size={12}>
             <Switch
@@ -244,6 +262,7 @@ const SettingsPage: React.FC = () => {
         title: '操作',
         dataIndex: 'action',
         width: 200,
+        align: 'center',
         render: (_: unknown, record) => (
           <Space size={12}>
             <Button type="link" onClick={() => handleOpenModelModal(record)}>
@@ -325,11 +344,11 @@ const SettingsPage: React.FC = () => {
     <MainLayout>
       <PageHeader
         title="系统设置"
-        subtitle="管理模型配置与解析模板"
+        subtitle="管理供应商配置与解析模板"
         extra={
           <Space>
             <Button type="primary" onClick={() => handleOpenModelModal()}>
-              新增模型
+              新增供应商
             </Button>
             <Button onClick={() => openSettingsModal('knowledge')}>知识库解析格式</Button>
             <Button onClick={() => openSettingsModal('question')}>题库解析格式</Button>
@@ -337,7 +356,7 @@ const SettingsPage: React.FC = () => {
         }
       />
 
-      <Card title="模型配置" bordered={false}>
+      <Card title="供应商配置" bordered={false}>
         <Table<ModelConfig>
           rowKey="id"
           loading={loading}
@@ -349,7 +368,7 @@ const SettingsPage: React.FC = () => {
 
       <Modal
         open={modelModalOpen}
-        title={editingModel ? '修改模型配置' : '新增模型配置'}
+        title={editingModel ? '修改供应商配置' : '新增供应商配置'}
         destroyOnClose
         onCancel={() => {
           setModelModalOpen(false);
@@ -363,25 +382,43 @@ const SettingsPage: React.FC = () => {
       >
         <Form form={form} layout="vertical">
           <Form.Item
-            label="模型名称"
-            name="name"
-            rules={[{ required: true, message: '请输入模型名称' }]}
+            label="供应商类型"
+            name="type"
+            initialValue="openai"
+            rules={[{ required: true, message: '请输入供应商类型' }]}
           >
-            <Input placeholder="请输入模型名称" allowClear />
+            <Select
+              defaultValue="openai"
+              style={{ width: 120 }}
+              onChange={onTypeChange}
+              options={[
+                { value: 'openai', label: 'OpenAI' },
+                { value: 'qwen', label: 'Qwen' },
+                { value: 'gemini', label: 'Gemini' },
+                { value: 'custom', label: 'Custom' },
+              ]}
+            />
           </Form.Item>
           <Form.Item
-            label="模型地址"
+            label="供应商名称"
+            name="name"
+            rules={[{ required: true, message: '请输入供应商名称' }]}
+          >
+            <Input placeholder="请输入供应商名称" allowClear />
+          </Form.Item>
+          <Form.Item
+            label="供应商地址"
             name="endpoint"
-            rules={[{ required: true, message: '请输入模型服务地址' }]}
+            rules={[{ required: true, message: '请输入供应商服务地址' }]}
           >
             <Input placeholder="https://example.com/v1/chat/completions" allowClear />
           </Form.Item>
           <Form.Item
-            label="模型密钥"
+            label="供应商密钥"
             name="api_key"
-            rules={[{ required: true, message: '请输入模型密钥' }]}
+            rules={[{ required: true, message: '请输入供应商密钥' }]}
           >
-            <Input.Password placeholder="请输入模型密钥" allowClear />
+            <Input.Password placeholder="请输入供应商密钥" allowClear />
           </Form.Item>
           <Form.Item label="描述" name="description">
             <Input.TextArea placeholder="请输入描述信息" rows={3} allowClear />

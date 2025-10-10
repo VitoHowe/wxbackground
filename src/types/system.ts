@@ -10,6 +10,7 @@ export type JsonObject = { [key: string]: JsonValue };
 
 export interface ModelConfig {
   id: number;
+  type: string;
   name: string;
   endpoint: string;
   api_key: string;
@@ -20,11 +21,19 @@ export interface ModelConfig {
 }
 
 export interface ModelConfigPayload {
+  type: string;
   name: string;
   endpoint: string;
   api_key: string;
   description?: string | null;
   status: number;
+}
+
+export interface ProviderModel {
+  id: string;
+  name: string;
+  description?: string;
+  owned_by?: string;
 }
 
 export interface SystemSetting<TPayload = JsonValue> {

@@ -37,8 +37,8 @@ export const API_PATHS = {
   FILE_PARSE_STATUS: (id: number) => `/files/${id}/parse-status`,
 
   // 系统设置相关
-  MODEL_CONFIGS: '/system/models',
-  MODEL_CONFIG_DETAIL: (id: number) => `/system/models/${id}`,
+  PROVIDER_CONFIGS: '/system/providers',
+  PROVIDER_CONFIG_DETAIL: (id: number) => `/system/providers/${id}`,
   KNOWLEDGE_FORMAT: '/system/knowledge-format',
   QUESTION_FORMAT: '/system/question-parse-format',
 } as const;

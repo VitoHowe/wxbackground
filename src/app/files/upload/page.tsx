@@ -45,6 +45,7 @@ const UploadPage: React.FC = () => {
         name: values.name,
         description: values.description,
         type: file.type,
+        fileType: values.fileType,
       });
       if (res.code === 200) {
         message.success('上传成功');
@@ -93,7 +94,20 @@ const UploadPage: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-
+          <Form.Item label="文件分类"
+            name="fileType"
+            rules={[{ required: true, message: '请输入文件分类' }]}
+            initialValue="question_bank"
+          >
+            <Select
+              allowClear
+              placeholder="题库/知识库"
+              options={[
+                { label: '题库', value: 'question_bank' },
+                { label: '知识库', value: 'knowledge_base' },
+              ]}
+            />
+          </Form.Item>
           <Form.Item label="题库描述" name="description">
             <Input.TextArea rows={4} placeholder="请输入该文件/题库的描述" allowClear />
           </Form.Item>

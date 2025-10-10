@@ -5,27 +5,32 @@ import type {
   JsonObject,
   ModelConfig,
   ModelConfigPayload,
+  ProviderModel,
   SystemSetting,
 } from '@/types';
 
 export class SystemService {
-  static async fetchModelConfigs(): Promise<ApiResponse<ModelConfig[]>> {
-    return get<ModelConfig[]>(API_PATHS.MODEL_CONFIGS);
+  static async fetchProviderConfigs(): Promise<ApiResponse<ModelConfig[]>> {
+    return get<ModelConfig[]>(API_PATHS.PROVIDER_CONFIGS);
   }
 
-  static async createModelConfig(data: ModelConfigPayload): Promise<ApiResponse<ModelConfig>> {
-    return post<ModelConfig, ModelConfigPayload>(API_PATHS.MODEL_CONFIGS, data);
+  static async createProviderConfig(data: ModelConfigPayload): Promise<ApiResponse<ModelConfig>> {
+    return post<ModelConfig, ModelConfigPayload>(API_PATHS.PROVIDER_CONFIGS, data);
   }
 
-  static async updateModelConfig(
+  static async updateProviderConfig(
     id: number,
     data: Partial<ModelConfigPayload>
   ): Promise<ApiResponse<ModelConfig>> {
-    return put<ModelConfig, Partial<ModelConfigPayload>>(API_PATHS.MODEL_CONFIG_DETAIL(id), data);
+    return put<ModelConfig, Partial<ModelConfigPayload>>(API_PATHS.PROVIDER_CONFIG_DETAIL(id), data);
   }
 
-  static async deleteModelConfig(id: number): Promise<ApiResponse<null>> {
-    return del<null>(API_PATHS.MODEL_CONFIG_DETAIL(id));
+  static async deleteProviderConfig(id: number): Promise<ApiResponse<null>> {
+    return del<null>(API_PATHS.PROVIDER_CONFIG_DETAIL(id));
+  }
+
+  static async fetchProviderModels(providerId: number): Promise<ApiResponse<ProviderModel[]>> {
+    return get<ProviderModel[]>(`${API_PATHS.PROVIDER_CONFIG_DETAIL(providerId)}/models`);
   }
 
   static async fetchKnowledgeFormat<TPayload = JsonObject>(): Promise<ApiResponse<SystemSetting<TPayload>>> {

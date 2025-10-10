@@ -43,14 +43,15 @@ export interface PagedResult<T> {
 export class FilesService {
   static async uploadFile(
     file: File,
-    payload: { name: string; description?: string; type?: string }
+    payload: { name: string; description?: string; type?: string; fileType?: string }
   ): Promise<ApiResponse<FileItem>> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('name', payload.name);
     if (payload.description) formData.append('description', payload.description);
     if (payload.type) formData.append('type', payload.type);
-
+    if (payload.fileType) formData.append('fileType', payload.fileType);
+    debugger;
     const res = await request.post<ApiResponse<FileItem>>(API_PATHS.FILE_UPLOAD, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -65,8 +66,19 @@ export class FilesService {
     return res.data;
   }
 
-  static async parseFile(id: number): Promise<ApiResponse<{ taskId: string; message: string }>> {
-    const res = await request.post<ApiResponse<{ taskId: string; message: string }>>(API_PATHS.FILE_PARSE(id));
+  static async parseFile(
+    id: number,
+    config?: { providerId: number; modelName: string }
+  ): Promise<ApiResponse<{ taskId: string; message: string }>> {
+    const res = await request.post<ApiResponse<{ taskId: string; message: string }>>(
+      API_PATHS.FILE_PARSE(id),
+      config
+    );
+    return res.data;
+  }
+
+  static async deleteFile(id: number): Promise<ApiResponse<void>> {
+    const res = await request.delete<ApiResponse<void>>(API_PATHS.FILE_DETAIL(id));
     return res.data;
   }
 }

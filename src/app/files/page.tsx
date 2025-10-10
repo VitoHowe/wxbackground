@@ -18,11 +18,15 @@ import {
   Divider,
   Empty,
   DatePicker,
+  Modal,
+  Form,
 } from 'antd';
-import { CalendarOutlined, CloudOutlined, EyeOutlined, RedoOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { CalendarOutlined, CloudOutlined, DeleteOutlined, EyeOutlined, RedoOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
 import { FilesService, type FileItem, type FileStatus } from '@/services/files';
+import { SystemService } from '@/services/system';
+import type { ModelConfig, ProviderModel } from '@/types';
 
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -63,6 +67,14 @@ const FilesListPage: React.FC = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [parsingId, setParsingId] = useState<number | null>(null);
+  const [parseModalOpen, setParseModalOpen] = useState(false);
+  const [currentFile, setCurrentFile] = useState<FileItem | null>(null);
+  const [providers, setProviders] = useState<ModelConfig[]>([]);
+  const [models, setModels] = useState<ProviderModel[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [form] = Form.useForm<{ providerId: number; modelName: string }>();
+  const { modal } = App.useApp();
 
   const startTime = dateRange?.[0]?.startOf('day').format('YYYY-MM-DD HH:mm:ss');
   const endTime = dateRange?.[1]?.endOf('day').format('YYYY-MM-DD HH:mm:ss');
@@ -107,74 +119,172 @@ const FilesListPage: React.FC = () => {
     }
   }, [fetchData, message]);
 
-  const handleParse = useCallback(async (record: FileItem) => {
-    if (!record?.id) return;
-    const key = `parse-${record.id}`;
-    setParsingId(record.id);
-    message.open({ type: 'loading', content: '正在发起解析...', key, duration: 0 });
+  const fetchProviders = useCallback(async () => {
     try {
-      const res = await FilesService.parseFile(record.id);
+      const res = await SystemService.fetchProviderConfigs();
+      if (res.code === 200 && Array.isArray(res.data)) {
+        const activeProviders = res.data.filter(p => p.status === 1);
+        setProviders(activeProviders);
+        return activeProviders;
+      } else {
+        message.error(res.message || '获取供应商列表失败');
+        return [];
+      }
+    } catch (e: any) {
+      message.error(e?.message || '获取供应商列表失败');
+      return [];
+    }
+  }, [message]);
+
+  const fetchModels = useCallback(async (providerId: number) => {
+    setLoadingModels(true);
+    try {
+      const res = await SystemService.fetchProviderModels(providerId);
+      if (res.code === 200 && Array.isArray(res.data)) {
+        setModels(res.data);
+      } else {
+        message.error(res.message || '获取模型列表失败');
+        setModels([]);
+      }
+    } catch (e: any) {
+      message.error(e?.message || '获取模型列表失败');
+      setModels([]);
+    } finally {
+      setLoadingModels(false);
+    }
+  }, [message]);
+
+  const handleOpenParseModal = useCallback(async (record: FileItem) => {
+    if (!record?.id) return;
+    setCurrentFile(record);
+    setParseModalOpen(true);
+    form.resetFields();
+    setModels([]);
+    await fetchProviders();
+  }, [fetchProviders, form]);
+
+  const handleDeleteFile = useCallback(async (record: FileItem) => {
+    if (!record?.id) return;
+    modal.confirm({
+      title: '确认删除',
+      content: `确定要删除文件「${record.name}」吗？`,
+      okText: '删除',
+      okType: 'danger',
+      cancelText: '取消',
+      async onOk() {
+        try {
+          const res = await FilesService.deleteFile(record.id);
+          if (res.code === 200) {
+            message.success('删除成功');
+            await fetchData();
+          } else {
+            message.error(res.message || '删除失败');
+          }
+        } catch (error: unknown) {
+          message.error((error as Error)?.message || '删除失败');
+        }
+      },
+    });
+  }, [fetchData, message, modal]);
+
+  const handleProviderChange = useCallback((providerId: number) => {
+    form.setFieldValue('modelName', undefined);
+    setModels([]);
+    if (providerId) {
+      fetchModels(providerId);
+    }
+  }, [fetchModels, form]);
+
+  const handleConfirmParse = useCallback(async () => {
+    if (!currentFile?.id) return;
+    try {
+      const values = await form.validateFields();
+      const key = `parse-${currentFile.id}`;
+      setConfirmLoading(true);
+      message.open({ type: 'loading', content: '正在发起解析...', key, duration: 0 });
+
+      const res = await FilesService.parseFile(currentFile.id, {
+        providerId: values.providerId,
+        modelName: values.modelName,
+      });
+
       if (res.code === 200) {
         message.open({ type: 'success', content: res.data?.message || '解析任务已启动', key, duration: 2 });
+        setParseModalOpen(false);
+        setCurrentFile(null);
         await fetchData();
       } else {
         message.open({ type: 'error', content: res.message || '解析任务启动失败', key, duration: 3 });
       }
     } catch (e: any) {
-      message.open({ type: 'error', content: e?.message || '解析任务启动失败', key, duration: 3 });
+      if (!(e as { errorFields?: unknown }).errorFields) {
+        message.error(e?.message || '解析任务启动失败');
+      }
     } finally {
-      setParsingId(null);
+      setConfirmLoading(false);
     }
-  }, [fetchData, message]);
+  }, [currentFile, fetchData, form, message]);
+
+  const handleCancelParse = useCallback(() => {
+    setParseModalOpen(false);
+    setCurrentFile(null);
+    form.resetFields();
+    setModels([]);
+  }, [form]);
 
   const columns: ColumnsType<FileItem> = useMemo(
     () => [
       {
         title: '序号',
         dataIndex: 'index',
-        width: 80,
+        width: 50,
         align: 'center' as const,
         render: (_: unknown, __: FileItem, index) => (page - 1) * limit + index + 1,
       },
       {
         title: '文件名称',
         dataIndex: 'name',
+        width: 200,
         render: (value: FileItem['name'], record: FileItem) => (
           <Space direction="vertical" size={4}>
             <Text strong>{value || '-'}</Text>
-            <Text type="secondary" style={{ fontSize: 12 }}>{record.file_original_name || '—'}</Text>
+            {/* <Text type="secondary" style={{ fontSize: 12 }}>{record.file_original_name || '—'}</Text> */}
           </Space>
         ),
       },
       {
         title: '上传人',
         dataIndex: 'creator_name',
-        width: 140,
+        width: 80,
+        align: 'center' as const,
         render: (value: FileItem['creator_name']) => value || '-',
       },
       {
         title: '题目数量',
         dataIndex: 'total_questions',
-        width: 120,
+        width: 80,
         align: 'center' as const,
         render: (value: FileItem['total_questions']) => (typeof value === 'number' ? value : '—'),
       },
       {
         title: '文件大小',
         dataIndex: 'file_size',
-        width: 140,
+        width: 80,
+        align: 'center' as const,
         render: (value: FileItem['file_size']) => formatFileSize(value),
       },
       {
         title: '解析状态',
         dataIndex: 'parse_status',
-        width: 140,
+        width: 80,
+        align: 'center' as const,
         render: (value: FileItem['parse_status']) => getStatusTag(value),
       },
       {
         title: '上传时间',
         dataIndex: 'created_at',
-        width: 200,
+        width: 100,
+        align: 'center' as const,
         render: (value: FileItem['created_at']) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '-'),
       },
       {
@@ -194,19 +304,24 @@ const FilesListPage: React.FC = () => {
                 <Button
                   type="primary"
                   icon={<ThunderboltOutlined />}
-                  onClick={() => handleParse(record)}
-                  loading={parsingId === record.id}
-                  disabled={parsingId !== null && parsingId !== record.id}
+                  onClick={() => handleOpenParseModal(record)}
                 >
                   解析
                 </Button>
               )}
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => handleDeleteFile(record)}
+              >
+                删除
+              </Button>
             </Space>
           );
         },
       },
     ],
-    [getStatusTag, handleParse, limit, message, page, parsingId]
+    [getStatusTag, handleDeleteFile, handleOpenParseModal, limit, message, page]
   );
 
   useEffect(() => {
@@ -332,6 +447,57 @@ const FilesListPage: React.FC = () => {
           </Space>
         </Card>
       </Space>
+
+      <Modal
+        title="配置解析参数"
+        open={parseModalOpen}
+        onOk={handleConfirmParse}
+        onCancel={handleCancelParse}
+        confirmLoading={confirmLoading}
+        okText="开始解析"
+        cancelText="取消"
+        width={500}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          style={{ marginTop: 24 }}
+        >
+          <Form.Item
+            label="选择供应商"
+            name="providerId"
+            rules={[{ required: true, message: '请选择供应商' }]}
+          >
+            <Select
+              placeholder="请选择供应商"
+              onChange={handleProviderChange}
+              options={providers.map(p => ({
+                label: `${p.name} (${p.type})`,
+                value: p.id,
+              }))}
+              size="large"
+            />
+          </Form.Item>
+          <Form.Item
+            label="选择模型"
+            name="modelName"
+            rules={[{ required: true, message: '请选择模型' }]}
+          >
+            <Select
+              placeholder="请先选择供应商"
+              loading={loadingModels}
+              disabled={models.length === 0}
+              options={models.map(m => ({
+                label: m.name,
+                value: m.id,
+                description: m.description,
+              }))}
+              size="large"
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </MainLayout>
   );
 };

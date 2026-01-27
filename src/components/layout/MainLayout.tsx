@@ -22,6 +22,7 @@ import {
   CloudUploadOutlined,
   TeamOutlined,
   QuestionCircleOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useAuth } from '@/hooks/useAuth';
@@ -73,6 +74,33 @@ const menuItems: MenuProps['items'] = [
     ],
   },
   {
+    key: 'question-config',
+    icon: <BookOutlined />,
+    label: '题库配置',
+    children: [
+      {
+        key: 'qc-subjects',
+        label: '科目管理',
+      },
+      {
+        key: 'qc-chapters',
+        label: '章节管理',
+      },
+      {
+        key: 'qc-banks',
+        label: '题库管理',
+      },
+      {
+        key: 'qc-template',
+        label: '题库模板',
+      },
+      {
+        key: 'qc-images',
+        label: '图片管理',
+      },
+    ],
+  },
+  {
     key: 'user-management',
     icon: <TeamOutlined />,
     label: '用户管理',
@@ -89,6 +117,11 @@ const menuKeyToPath: Record<string, string> = {
   'file-upload': '/files/upload',
   'file-list': '/files',
   settings: '/settings',
+  'qc-subjects': '/question-config/subjects',
+  'qc-chapters': '/question-config/chapters',
+  'qc-banks': '/question-config/banks',
+  'qc-template': '/question-config/template',
+  'qc-images': '/question-config/images',
 };
 
 const resolveSelectedMenuKey = (pathname: string): string => {
@@ -114,6 +147,8 @@ const deriveMenuState = (pathname: string) => {
 
   const nextOpenKeys = selectedKey.startsWith('file-')
     ? ['file-management']
+    : selectedKey.startsWith('qc-')
+      ? ['question-config']
     : [];
 
   return {

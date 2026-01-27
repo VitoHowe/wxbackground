@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { MainLayout, PageHeader } from '@/components';
-import { Card, Form, Input, Button, Upload, Typography, Space, Select, App, Row, Col } from 'antd';
+import { Card, Form, Input, Button, Upload, Typography, Space, App, Row, Col } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { FilesService } from '@/services/files';
@@ -10,9 +10,7 @@ import { FilesService } from '@/services/files';
 const { Dragger } = Upload;
 const { Text } = Typography;
 
-const ACCEPTED_TYPES = [
-  '.pdf', '.doc', '.docx', '.txt', '.md', '.xlsx', '.xls', '.csv', '.json',
-];
+const ACCEPTED_TYPES = ['.md'];
 
 const UploadPage: React.FC = () => {
   const [form] = Form.useForm();
@@ -25,18 +23,18 @@ const UploadPage: React.FC = () => {
     maxCount: 1,
     multiple: false,
     accept: ACCEPTED_TYPES.join(','),
-    beforeUpload: (file) => {
-      setFile(file);
-      return false; // prevent auto upload
+    beforeUpload: (selectedFile) => {
+      setFile(selectedFile);
+      return false;
     },
     onRemove: () => {
       setFile(null);
     },
   };
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: { name: string; description?: string }) => {
     if (!file) {
-      message.error('请先选择需要上传的文件');
+      message.error('请先选择需要上传的 Markdown 文件');
       return;
     }
     setSubmitting(true);
@@ -44,8 +42,6 @@ const UploadPage: React.FC = () => {
       const res = await FilesService.uploadFile(file, {
         name: values.name,
         description: values.description,
-        type: file.type,
-        fileType: values.fileType,
       });
       if (res.code === 200) {
         message.success('上传成功');
@@ -63,68 +59,37 @@ const UploadPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <PageHeader title="文件上传" subtitle="支持 PDF, DOC, DOCX, TXT, MD, XLSX, XLS, CSV, JSON" />
+      <PageHeader title="Markdown 文档上传" subtitle="仅支持 .md 文件，用于章节解析" />
       <Card>
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Row gutter={16}>
             <Col xs={24} md={12}>
               <Form.Item
-                label="题库名称"
+                label="文档名称"
                 name="name"
-                rules={[{ required: true, message: '请输入题库名称' }]}
+                rules={[{ required: true, message: '请输入文档名称' }]}
               >
-                <Input placeholder="请输入文件/题库名称" allowClear />
+                <Input placeholder="请输入 Markdown 文档名称" allowClear />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
-              <Form.Item label="文件类型(可选)" name="type">
-                <Select
-                  allowClear
-                  placeholder="自动识别，如需可手动选择"
-                  options={[
-                    { label: 'PDF', value: 'application/pdf' },
-                    { label: 'Word (DOC/DOCX)', value: 'application/msword' },
-                    { label: 'Excel (XLS/XLSX)', value: 'application/vnd.ms-excel' },
-                    { label: 'CSV', value: 'text/csv' },
-                    { label: '纯文本', value: 'text/plain' },
-                    { label: 'Markdown', value: 'text/markdown' },
-                    { label: 'JSON', value: 'application/json' },
-                  ]}
-                />
+              <Form.Item label="文档描述" name="description">
+                <Input placeholder="可选，用于备注文档用途" allowClear />
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item label="文件分类"
-            name="fileType"
-            rules={[{ required: true, message: '请输入文件分类' }]}
-            initialValue="question_bank"
-          >
-            <Select
-              allowClear
-              placeholder="题库/知识库"
-              options={[
-                { label: '题库', value: 'question_bank' },
-                { label: '知识库', value: 'knowledge_base' },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item label="题库描述" name="description">
-            <Input.TextArea rows={4} placeholder="请输入该文件/题库的描述" allowClear />
-          </Form.Item>
 
-          <Form.Item label="选择文件" required>
+          <Form.Item label="选择 Markdown 文件" required>
             <Dragger {...draggerProps} style={{ padding: 16 }}>
               <p className="ant-upload-drag-icon">
                 <InboxOutlined />
               </p>
-              <p className="ant-upload-text">点击或拖拽文件到此区域进行上传</p>
-              <p className="ant-upload-hint">
-                支持的文件类型: {ACCEPTED_TYPES.join(', ')}
-              </p>
+              <p className="ant-upload-text">点击或拖拽 .md 文件到此处上传</p>
+              <p className="ant-upload-hint">支持文件类型：{ACCEPTED_TYPES.join(', ')}</p>
             </Dragger>
             {file && (
               <Text type="secondary" style={{ marginTop: 8, display: 'block' }}>
-                已选择: {file.name}
+                已选择：{file.name}
               </Text>
             )}
           </Form.Item>

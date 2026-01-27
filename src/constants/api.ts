@@ -28,6 +28,27 @@ export const API_PATHS = {
   QUESTION_DETAIL: (id: number) => `/questions/${id}`,
   QUESTION_BANKS: '/questions/banks',
   QUESTION_BANK_DETAIL: (id: number) => `/questions/banks/${id}`,
+  QUESTION_BANK_CHAPTERS: (bankId: number) => `/question-banks/${bankId}/chapters`,
+  QUESTION_BANK_IMAGES: (bankId: number) => `/question-banks/${bankId}/images`,
+  QUESTION_BANK_IMAGE_DETAIL: (bankId: number, filename: string) =>
+    `/question-banks/${bankId}/images/${filename}`,
+
+  // 科目与题库配置
+  SUBJECTS: '/subjects',
+  SUBJECTS_ADMIN: '/subjects/admin',
+  SUBJECT_DETAIL: (id: number) => `/subjects/${id}`,
+  SUBJECT_CHAPTERS: (subjectId: number) => `/subjects/${subjectId}/chapters`,
+  SUBJECT_CHAPTERS_SYNC: (subjectId: number) => `/subjects/${subjectId}/chapters/sync`,
+  SUBJECT_CHAPTER_ALIASES: (subjectId: number) => `/subjects/${subjectId}/chapter-aliases`,
+  SUBJECT_CHAPTER_ALIAS_DETAIL: (subjectId: number, aliasId: number) =>
+    `/subjects/${subjectId}/chapter-aliases/${aliasId}`,
+  SUBJECT_BANKS: (subjectId: number) => `/subjects/${subjectId}/banks`,
+  ADMIN_QUESTION_BANKS: '/admin/question-banks',
+  ADMIN_QUESTION_BANK_IMPORT: '/admin/question-banks/import-json',
+  ADMIN_QUESTION_BANK_CHAPTER_IMPORT: (bankId: number) =>
+    `/admin/question-banks/${bankId}/chapters/import-json`,
+  ADMIN_QUESTION_BANK_SUBJECT_CHAPTERS: (bankId: number) =>
+    `/admin/question-banks/${bankId}/subject-chapters`,
 
   // 文件相关
   FILES: '/files',
@@ -35,6 +56,13 @@ export const API_PATHS = {
   FILE_UPLOAD: '/files/upload',
   FILE_PARSE: (id: number) => `/files/${id}/parse`,
   FILE_PARSE_STATUS: (id: number) => `/files/${id}/parse-status`,
+
+  // Markdown 解析中心
+  ADMIN_MARKDOWN_FILES: '/admin/markdown-files',
+  ADMIN_MARKDOWN_FILE_DETAIL: (id: number) => `/admin/markdown-files/${id}`,
+  ADMIN_MARKDOWN_FILE_PARSE: (id: number) => `/admin/markdown-files/${id}/parse`,
+  ADMIN_MARKDOWN_FILE_CHAPTERS: (id: number) => `/admin/markdown-files/${id}/chapters`,
+  MARKDOWN_FILE_SOURCE: (id: number) => `/markdown-files/${id}/source.md`,
 
   // 系统设置相关
   PROVIDER_CONFIGS: '/system/providers',

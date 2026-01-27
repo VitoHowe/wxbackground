@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { MainLayout, PageHeader } from '@/components';
@@ -17,19 +17,23 @@ import {
   Button,
   Divider,
   Empty,
-  DatePicker,
+  Drawer,
   Modal,
-  Form,
 } from 'antd';
-import { CalendarOutlined, CloudOutlined, DeleteOutlined, EyeOutlined, RedoOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import {
+  CheckCircleOutlined,
+  CloudUploadOutlined,
+  DeleteOutlined,
+  FileSearchOutlined,
+  FileTextOutlined,
+  SyncOutlined,
+} from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import dayjs, { type Dayjs } from 'dayjs';
-import { FilesService, type FileItem, type FileStatus, type FileType } from '@/services/files';
-import { SystemService } from '@/services/system';
-import type { ModelConfig, ProviderModel } from '@/types';
+import dayjs from 'dayjs';
+import MarkdownPreview from '@uiw/react-markdown-preview';
+import { FilesService, type FileItem, type FileStatus, type ChapterItem } from '@/services/files';
 
 const { Text } = Typography;
-const { RangePicker } = DatePicker;
 
 const STATUS_COLORS: Record<FileStatus, string> = {
   pending: 'default',
@@ -43,11 +47,6 @@ const STATUS_LABEL: Record<FileStatus, string> = {
   parsing: '解析中',
   completed: '已完成',
   failed: '解析失败',
-};
-
-const FILE_TYPE_LABEL: Record<FileType, string> = {
-  question_bank: '题库',
-  knowledge_base: '知识点',
 };
 
 const formatFileSize = (bytes?: number) => {
@@ -67,45 +66,23 @@ const FilesListPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<FileItem[]>([]);
   const [total, setTotal] = useState(0);
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
-  const { message } = App.useApp();
-
   const [refreshing, setRefreshing] = useState(false);
-  const [parsingId, setParsingId] = useState<number | null>(null);
-  const [parseModalOpen, setParseModalOpen] = useState(false);
+  const { message, modal } = App.useApp();
+
+  const [chapterOpen, setChapterOpen] = useState(false);
+  const [chapterLoading, setChapterLoading] = useState(false);
+  const [chapters, setChapters] = useState<ChapterItem[]>([]);
   const [currentFile, setCurrentFile] = useState<FileItem | null>(null);
-  const [providers, setProviders] = useState<ModelConfig[]>([]);
-  const [models, setModels] = useState<ProviderModel[]>([]);
-  const [loadingModels, setLoadingModels] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
-  const [form] = Form.useForm<{ providerId: number; modelName: string }>();
-  const { modal } = App.useApp();
 
-  const startTime = dateRange?.[0]?.startOf('day').format('YYYY-MM-DD HH:mm:ss');
-  const endTime = dateRange?.[1]?.endOf('day').format('YYYY-MM-DD HH:mm:ss');
-
-  const getStatusTag = useCallback((s?: FileStatus) => {
-    if (!s) return '-';
-    return (
-      <Tag color={STATUS_COLORS[s]} bordered={false} style={{ paddingInline: 12 }}>
-        {STATUS_LABEL[s]}
-      </Tag>
-    );
-  }, []);
-
-  const getFileTypeTag = useCallback((s?: FileType) => {
-    if (!s) return '-';
-    return (
-      <Text strong>
-        {FILE_TYPE_LABEL[s]}
-      </Text>
-    );
-  }, []);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewContent, setPreviewContent] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await FilesService.listFiles({ page, limit, status, startTime, endTime });
+      const res = await FilesService.listFiles({ page, limit, status });
       if (res.code === 200 && res.data) {
         setData(res.data.files || []);
         setTotal(res.data.total || 0);
@@ -119,7 +96,7 @@ const FilesListPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [endTime, limit, message, page, startTime, status]);
+  }, [limit, message, page, status]);
 
   const refreshList = useCallback(async () => {
     setRefreshing(true);
@@ -133,55 +110,26 @@ const FilesListPage: React.FC = () => {
     }
   }, [fetchData, message]);
 
-  const fetchProviders = useCallback(async () => {
-    try {
-      const res = await SystemService.fetchProviderConfigs();
-      if (res.code === 200 && Array.isArray(res.data)) {
-        const activeProviders = res.data.filter(p => p.status === 1);
-        setProviders(activeProviders);
-        return activeProviders;
-      } else {
-        message.error(res.message || '获取供应商列表失败');
-        return [];
-      }
-    } catch (e: any) {
-      message.error(e?.message || '获取供应商列表失败');
-      return [];
-    }
-  }, [message]);
-
-  const fetchModels = useCallback(async (providerId: number) => {
-    setLoadingModels(true);
-    try {
-      const res = await SystemService.fetchProviderModels(providerId);
-      if (res.code === 200 && Array.isArray(res.data)) {
-        setModels(res.data);
-      } else {
-        message.error(res.message || '获取模型列表失败');
-        setModels([]);
-      }
-    } catch (e: any) {
-      message.error(e?.message || '获取模型列表失败');
-      setModels([]);
-    } finally {
-      setLoadingModels(false);
-    }
-  }, [message]);
-
-  const handleOpenParseModal = useCallback(async (record: FileItem) => {
+  const handleParse = useCallback(async (record: FileItem) => {
     if (!record?.id) return;
-    setCurrentFile(record);
-    setParseModalOpen(true);
-    form.resetFields();
-    setModels([]);
-    await fetchProviders();
-  }, [fetchProviders, form]);
+    try {
+      const res = await FilesService.parseFile(record.id);
+      if (res.code === 200) {
+        message.success('解析完成');
+        await fetchData();
+      } else {
+        message.error(res.message || '解析失败');
+      }
+    } catch (e: any) {
+      message.error(e?.message || '解析失败');
+    }
+  }, [fetchData, message]);
 
-  const handleDeleteFile = useCallback(async (record: FileItem) => {
+  const handleDeleteFile = useCallback((record: FileItem) => {
     if (!record?.id) return;
     modal.confirm({
       title: '确认删除',
-      content: `确定要删除文件「${record.name}」吗？`,
+      content: `确认删除文档 “${record.name}” 吗？`,
       okText: '删除',
       okType: 'danger',
       cancelText: '取消',
@@ -201,181 +149,176 @@ const FilesListPage: React.FC = () => {
     });
   }, [fetchData, message, modal]);
 
-  const handleProviderChange = useCallback((providerId: number) => {
-    form.setFieldValue('modelName', undefined);
-    setModels([]);
-    if (providerId) {
-      fetchModels(providerId);
-    }
-  }, [fetchModels, form]);
-
-  const handleConfirmParse = useCallback(async () => {
-    if (!currentFile?.id) return;
+  const handleOpenChapters = useCallback(async (record: FileItem) => {
+    if (!record?.id) return;
+    setCurrentFile(record);
+    setChapterOpen(true);
+    setChapterLoading(true);
     try {
-      const values = await form.validateFields();
-      const key = `parse-${currentFile.id}`;
-      setConfirmLoading(true);
-      message.open({ type: 'loading', content: '正在发起解析...', key, duration: 0 });
-
-      const res = await FilesService.parseFile(currentFile.id, {
-        providerId: values.providerId,
-        modelName: values.modelName,
-      });
-
-      if (res.code === 200) {
-        message.open({ type: 'success', content: res.data?.message || '解析任务已启动', key, duration: 2 });
-        setParseModalOpen(false);
-        setCurrentFile(null);
-        await fetchData();
+      const res = await FilesService.listChapters(record.id);
+      if (res.code === 200 && Array.isArray(res.data)) {
+        setChapters(res.data);
       } else {
-        message.open({ type: 'error', content: res.message || '解析任务启动失败', key, duration: 3 });
+        setChapters([]);
+        message.error(res.message || '获取章节失败');
       }
     } catch (e: any) {
-      if (!(e as { errorFields?: unknown }).errorFields) {
-        message.error(e?.message || '解析任务启动失败');
-      }
+      message.error(e?.message || '获取章节失败');
+      setChapters([]);
     } finally {
-      setConfirmLoading(false);
+      setChapterLoading(false);
     }
-  }, [currentFile, fetchData, form, message]);
+  }, [message]);
 
-  const handleCancelParse = useCallback(() => {
-    setParseModalOpen(false);
-    setCurrentFile(null);
-    form.resetFields();
-    setModels([]);
-  }, [form]);
+  const handlePreview = useCallback(async (chapter: ChapterItem) => {
+    setPreviewOpen(true);
+    setPreviewTitle(chapter.chapter_title);
+    setPreviewContent('');
+    setPreviewLoading(true);
+    try {
+      const url = FilesService.buildPublicUrl(chapter.download_url);
+      const res = await fetch(url);
+      const text = await res.text();
+      setPreviewContent(text);
+    } catch (e: any) {
+      message.error(e?.message || '预览失败');
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, [message]);
 
   const columns: ColumnsType<FileItem> = useMemo(
     () => [
       {
         title: '序号',
         dataIndex: 'index',
-        width: 50,
-        align: 'center' as const,
+        width: 60,
+        align: 'center',
         render: (_: unknown, __: FileItem, index) => (page - 1) * limit + index + 1,
       },
       {
-        title: '文件名称',
+        title: '文档名称',
         dataIndex: 'name',
-        width: 200,
+        width: 220,
         render: (value: FileItem['name'], record: FileItem) => (
-          <Space direction="vertical" size={4}>
+          <Space direction="vertical" size={2}>
             <Text strong>{value || '-'}</Text>
-            {/* <Text type="secondary" style={{ fontSize: 12 }}>{record.file_original_name || '—'}</Text> */}
+            {record.description ? <Text type="secondary">{record.description}</Text> : null}
           </Space>
         ),
       },
       {
-        title: '文件类型',
-        dataIndex: 'file_type',
+        title: '章节数',
+        dataIndex: 'chapter_count',
         width: 80,
-        align: 'center' as const,
-        render: (value: FileItem['file_type']) => getFileTypeTag(value),
-      },
-      {
-        title: '上传人',
-        dataIndex: 'creator_name',
-        width: 80,
-        align: 'center' as const,
-        render: (value: FileItem['creator_name']) => value || '-',
-      },
-      {
-        title: '题目数量',
-        dataIndex: 'total_questions',
-        width: 80,
-        align: 'center' as const,
-        render: (value: FileItem['total_questions']) => (typeof value === 'number' ? value : '—'),
+        align: 'center',
+        render: (value: FileItem['chapter_count']) => (typeof value === 'number' ? value : '-'),
       },
       {
         title: '文件大小',
         dataIndex: 'file_size',
-        width: 80,
-        align: 'center' as const,
+        width: 100,
+        align: 'center',
         render: (value: FileItem['file_size']) => formatFileSize(value),
       },
       {
-        title: '解析状态',
+        title: '状态',
         dataIndex: 'parse_status',
-        width: 80,
-        align: 'center' as const,
-        render: (value: FileItem['parse_status']) => getStatusTag(value),
+        width: 100,
+        align: 'center',
+        render: (value: FileItem['parse_status']) => (
+          <Tag color={STATUS_COLORS[value || 'pending']} bordered={false}>
+            {STATUS_LABEL[value || 'pending']}
+          </Tag>
+        ),
+      },
+      {
+        title: '上传人',
+        dataIndex: 'creator_name',
+        width: 100,
+        align: 'center',
+        render: (value: FileItem['creator_name']) => value || '-',
       },
       {
         title: '上传时间',
         dataIndex: 'created_at',
-        width: 100,
-        align: 'center' as const,
+        width: 140,
+        align: 'center',
         render: (value: FileItem['created_at']) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '-'),
       },
       {
         title: '操作',
         key: 'action',
-        width: 200,
-        fixed: 'right' as const,
-        render: (_: unknown, record: FileItem) => {
-          const isCompleted = record.parse_status === 'completed';
-          return (
-            <Space>
-              {isCompleted ? (
-                <Button type="primary" ghost icon={<EyeOutlined />} onClick={() => message.info('查看解析数据功能待接入')}>
-                  查看解析数据
-                </Button>
-              ) : (
-                <Button
-                  type="primary"
-                  icon={<ThunderboltOutlined />}
-                  onClick={() => handleOpenParseModal(record)}
-                >
-                  解析
-                </Button>
-              )}
-              <Button
-                danger
-                icon={<DeleteOutlined />}
-                onClick={() => handleDeleteFile(record)}
-              >
-                删除
-              </Button>
-            </Space>
-          );
-        },
+        width: 220,
+        fixed: 'right',
+        render: (_: unknown, record: FileItem) => (
+          <Space>
+            <Button
+              type="primary"
+              size="small"
+              icon={<SyncOutlined />}
+              onClick={() => handleParse(record)}
+              disabled={record.parse_status === 'parsing'}
+            >
+              解析
+            </Button>
+            <Button
+              size="small"
+              icon={<FileSearchOutlined />}
+              onClick={() => handleOpenChapters(record)}
+              disabled={!record.chapter_count}
+            >
+              章节
+            </Button>
+            <Button
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteFile(record)}
+            >
+              删除
+            </Button>
+          </Space>
+        ),
       },
     ],
-    [getStatusTag, handleDeleteFile, handleOpenParseModal, limit, message, page]
+    [handleDeleteFile, handleOpenChapters, handleParse, limit, page]
   );
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const parseSummary = useMemo(() => {
-    if (!data.length) {
-      return { total: 0, completed: 0, pending: 0 };
-    }
-
-    return data.reduce<{ total: number; completed: number; pending: number }>((acc, item) => {
-      acc.total += 1;
-      if (item.parse_status === 'completed') acc.completed += 1;
-      if (item.parse_status === 'pending' || item.parse_status === 'parsing') acc.pending += 1;
-      return acc;
-    }, { total: 0, completed: 0, pending: 0 });
+  const stats = useMemo(() => {
+    return data.reduce(
+      (acc, item) => {
+        acc.total += 1;
+        if (item.parse_status === 'completed') acc.completed += 1;
+        if (item.parse_status === 'pending' || item.parse_status === 'parsing') acc.pending += 1;
+        acc.chapters += item.chapter_count || 0;
+        return acc;
+      },
+      { total: 0, completed: 0, pending: 0, chapters: 0 }
+    );
   }, [data]);
 
   return (
     <MainLayout>
-      <PageHeader title="文件解析中心" subtitle="洞察最新上传的资料，实时掌握解析进度" />
+      <PageHeader title="Markdown 解析中心" subtitle="上传 Markdown 文档并自动拆分章节" />
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Card bordered={false} style={{ background: '#f7f9fc' }}>
           <Row gutter={24} justify="space-between">
-            <Col xs={24} sm={12} md={8}>
-              <Statistic title="当前结果" value={parseSummary.total} prefix={<CloudOutlined />} valueStyle={{ fontSize: 28 }} />
+            <Col xs={24} sm={12} md={6}>
+              <Statistic title="文档总数" value={stats.total} prefix={<FileTextOutlined />} valueStyle={{ fontSize: 24 }} />
             </Col>
-            <Col xs={24} sm={12} md={8}>
-              <Statistic title="已完成解析" value={parseSummary.completed} prefix={<EyeOutlined />} valueStyle={{ color: '#52c41a', fontSize: 28 }} />
+            <Col xs={24} sm={12} md={6}>
+              <Statistic title="已完成" value={stats.completed} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#52c41a', fontSize: 24 }} />
             </Col>
-            <Col xs={24} sm={12} md={8}>
-              <Statistic title="等待/进行中" value={parseSummary.pending} prefix={<CalendarOutlined />} valueStyle={{ color: '#faad14', fontSize: 28 }} />
+            <Col xs={24} sm={12} md={6}>
+              <Statistic title="待处理" value={stats.pending} prefix={<SyncOutlined />} valueStyle={{ color: '#faad14', fontSize: 24 }} />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Statistic title="章节总数" value={stats.chapters} prefix={<CloudUploadOutlined />} valueStyle={{ color: '#1677ff', fontSize: 24 }} />
             </Col>
           </Row>
         </Card>
@@ -384,7 +327,7 @@ const FilesListPage: React.FC = () => {
           bordered={false}
           bodyStyle={{ padding: 24 }}
           extra={
-            <Button icon={<RedoOutlined />} onClick={refreshList} loading={loading || refreshing}>
+            <Button icon={<SyncOutlined />} onClick={refreshList} loading={loading || refreshing}>
               刷新
             </Button>
           }
@@ -397,9 +340,9 @@ const FilesListPage: React.FC = () => {
                   allowClear
                   placeholder="全部"
                   value={status}
-                  onChange={(v) => {
+                  onChange={(value) => {
                     setPage(1);
-                    setStatus(v as FileStatus | undefined);
+                    setStatus(value as FileStatus | undefined);
                   }}
                   options={[
                     { label: '待解析', value: 'pending' },
@@ -412,27 +355,12 @@ const FilesListPage: React.FC = () => {
                 />
               </Col>
               <Col xs={24} sm={12} md={8}>
-                <Text type="secondary">上传时间</Text>
-                <RangePicker
-                  allowEmpty={[true, true]}
-                  value={dateRange as any}
-                  onChange={(values) => {
-                    setPage(1);
-                    setDateRange(values as [Dayjs, Dayjs] | null);
-                  }}
-                  style={{ width: '100%', marginTop: 8 }}
-                  size="large"
-                  showTime={{ format: 'HH:mm' }}
-                  format="YYYY-MM-DD HH:mm"
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8}>
                 <Text type="secondary">每页数量</Text>
                 <Select
                   value={limit}
-                  onChange={(v) => {
+                  onChange={(value) => {
                     setPage(1);
-                    setLimit(v);
+                    setLimit(value);
                   }}
                   options={[10, 20, 50, 100].map((n) => ({ label: `${n} 条/页`, value: n }))}
                   style={{ width: '100%', marginTop: 8 }}
@@ -451,8 +379,8 @@ const FilesListPage: React.FC = () => {
               pagination={false}
               bordered
               size="middle"
-              scroll={{ x: 960 }}
-              locale={{ emptyText: <Empty description="暂无文件，请先上传文档" /> }}
+              scroll={{ x: 980 }}
+              locale={{ emptyText: <Empty description="暂无 Markdown 文档" /> }}
             />
 
             <div style={{ textAlign: 'right' }}>
@@ -469,55 +397,67 @@ const FilesListPage: React.FC = () => {
         </Card>
       </Space>
 
+      <Drawer
+        title={currentFile ? `章节列表 · ${currentFile.name}` : '章节列表'}
+        open={chapterOpen}
+        onClose={() => setChapterOpen(false)}
+        width={520}
+      >
+        <Table
+          rowKey="id"
+          dataSource={chapters}
+          loading={chapterLoading}
+          pagination={false}
+          size="small"
+          columns={[
+            {
+              title: '章节',
+              dataIndex: 'chapter_title',
+              render: (value: string) => value || '-',
+            },
+            {
+              title: '大小',
+              dataIndex: 'file_size',
+              width: 90,
+              render: (value: number) => formatFileSize(value),
+            },
+            {
+              title: '操作',
+              width: 160,
+              render: (_: unknown, record: ChapterItem) => (
+                <Space>
+                  <Button size="small" onClick={() => handlePreview(record)}>
+                    预览
+                  </Button>
+                  <Button
+                    size="small"
+                    type="link"
+                    href={FilesService.buildPublicUrl(record.download_url)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    下载
+                  </Button>
+                </Space>
+              ),
+            },
+          ]}
+        />
+      </Drawer>
+
       <Modal
-        title="配置解析参数"
-        open={parseModalOpen}
-        onOk={handleConfirmParse}
-        onCancel={handleCancelParse}
-        confirmLoading={confirmLoading}
-        okText="开始解析"
-        cancelText="取消"
-        width={500}
+        title={previewTitle || '章节预览'}
+        open={previewOpen}
+        onCancel={() => setPreviewOpen(false)}
+        footer={null}
+        width={900}
         destroyOnClose
       >
-        <Form
-          form={form}
-          layout="vertical"
-          style={{ marginTop: 24 }}
-        >
-          <Form.Item
-            label="选择供应商"
-            name="providerId"
-            rules={[{ required: true, message: '请选择供应商' }]}
-          >
-            <Select
-              placeholder="请选择供应商"
-              onChange={handleProviderChange}
-              options={providers.map(p => ({
-                label: `${p.name} (${p.type})`,
-                value: p.id,
-              }))}
-              size="large"
-            />
-          </Form.Item>
-          <Form.Item
-            label="选择模型"
-            name="modelName"
-            rules={[{ required: true, message: '请选择模型' }]}
-          >
-            <Select
-              placeholder="请先选择供应商"
-              loading={loadingModels}
-              disabled={models.length === 0}
-              options={models.map(m => ({
-                label: m.name,
-                value: m.id,
-                description: m.description,
-              }))}
-              size="large"
-            />
-          </Form.Item>
-        </Form>
+        {previewLoading ? (
+          <Text type="secondary">加载中...</Text>
+        ) : (
+          <MarkdownPreview source={previewContent} skipHtml />
+        )}
       </Modal>
     </MainLayout>
   );

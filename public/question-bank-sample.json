@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "version": "1.0",
+    "generated_at": "2026-01-21T12:00:00Z",
+    "notes": "This meta block is optional and ignored by import."
+  },
+  "questions": [
+    {
+      "question_no": "1",
+      "type": "single",
+      "content": "Which statement best defines project scope?",
+      "options": [
+        "A. The total cost budget approved by stakeholders",
+        "B. The work required to deliver the product with specified features",
+        "C. The time schedule for each task in the project plan",
+        "D. The risk register covering all known uncertainties"
+      ],
+      "answer": "B",
+      "explanation": "Scope focuses on the work and deliverables, not schedule or budget.",
+      "difficulty": 1,
+      "tags": ["Chapter 01 - Scope Basics", "scope"]
+    },
+    {
+      "question_no": "2",
+      "type": "multiple",
+      "content": "Which are typical inputs to creating the WBS?",
+      "options": [
+        "A. Project scope statement",
+        "B. Requirements documentation",
+        "C. Issue log",
+        "D. RBS (Risk Breakdown Structure)"
+      ],
+      "answer": "A,B",
+      "explanation": "WBS is based on scope and requirements; issue log is not an input.",
+      "difficulty": 2,
+      "tags": ["Chapter 01 - Scope Basics", "wbs"]
+    },
+    {
+      "question_no": "3",
+      "type": "judge",
+      "content": "The critical path is the longest duration path through the project network.",
+      "answer": "True",
+      "explanation": "By definition, the critical path is the longest path with zero float.",
+      "difficulty": 1,
+      "tags": ["Chapter 02 - Schedule Management", "critical-path"]
+    },
+    {
+      "question_no": "4",
+      "type": "fill",
+      "content": "The technique used to determine which risks have the most impact is called ____.",
+      "answer": "qualitative risk analysis",
+      "explanation": "Qualitative analysis prioritizes risks by probability and impact.",
+      "difficulty": 2,
+      "tags": ["Chapter 03 - Risk Management", "risk"]
+    },
+    {
+      "question_no": "5",
+      "type": "essay",
+      "content": "Explain the difference between corrective action and preventive action.",
+      "answer": "Corrective action fixes a detected deviation, while preventive action reduces the probability of a future deviation.",
+      "explanation": "Both are part of change control but target different timing of issues.",
+      "difficulty": 3,
+      "tags": ["Chapter 04 - Change Control", "change-control"]
+    }
+  ]
+}

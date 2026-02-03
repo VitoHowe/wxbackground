@@ -29,6 +29,8 @@ export const API_PATHS = {
   QUESTION_BANKS: '/questions/banks',
   QUESTION_BANK_DETAIL: (id: number) => `/questions/banks/${id}`,
   QUESTION_BANK_CHAPTERS: (bankId: number) => `/question-banks/${bankId}/chapters`,
+  QUESTION_BANK_CHAPTER_DETAIL: (bankId: number, chapterId: number) =>
+    `/question-banks/${bankId}/chapters/${chapterId}`,
   QUESTION_BANK_IMAGES: (bankId: number) => `/question-banks/${bankId}/images`,
   QUESTION_BANK_IMAGE_DETAIL: (bankId: number, filename: string) =>
     `/question-banks/${bankId}/images/${filename}`,

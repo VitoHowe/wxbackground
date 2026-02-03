@@ -115,6 +115,16 @@ export class QuestionBanksAdminService {
     return res.data;
   }
 
+  static async deleteBankChapter(
+    bankId: number,
+    chapterId: number
+  ): Promise<ApiResponse<null>> {
+    const res = await request.delete<ApiResponse<null>>(
+      API_PATHS.QUESTION_BANK_CHAPTER_DETAIL(bankId, chapterId)
+    );
+    return res.data;
+  }
+
   static async listBankImages(
     bankId: number
   ): Promise<ApiResponse<{ images: BankImageItem[]; total: number }>> {

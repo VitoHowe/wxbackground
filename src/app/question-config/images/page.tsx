@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -22,6 +22,7 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import type { UploadFile } from "antd/es/upload/interface";
 import { DeleteOutlined, EditOutlined, InboxOutlined, ThunderboltOutlined } from "@ant-design/icons";
 import { MainLayout, PageHeader } from "@/components";
 import { SubjectsService, type SubjectItem } from "@/services/subjects";
@@ -44,7 +45,7 @@ const ImagesPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [overwrite, setOverwrite] = useState(false);
-  const [fileList, setFileList] = useState<any[]>([]);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -168,7 +169,9 @@ const ImagesPage: React.FC = () => {
     }
     try {
       setUploading(true);
-      const files = fileList.map((item) => item.originFileObj as File).filter(Boolean);
+      const files = fileList
+        .map((item) => (item as any).originFileObj ?? (item as any))
+        .filter((file) => file instanceof File) as File[];
       const res = await QuestionBanksAdminService.uploadBankImages(bankId, files, { overwrite });
       if (res.code === 200) {
         const skipped = res.data?.skipped || [];
@@ -410,11 +413,10 @@ const ImagesPage: React.FC = () => {
             </Paragraph>
             <Upload.Dragger
               multiple
+              accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.zip"
               fileList={fileList}
-              beforeUpload={(file) => {
-                setFileList((prev) => [...prev, file]);
-                return false;
-              }}
+              beforeUpload={() => false}
+              onChange={({ fileList: nextList }) => setFileList(nextList)}
               onRemove={(file) => {
                 setFileList((prev) => prev.filter((item) => item.uid !== file.uid));
               }}
@@ -423,7 +425,7 @@ const ImagesPage: React.FC = () => {
                 <InboxOutlined />
               </p>
               <p className="ant-upload-text">点击或拖拽图片到此处</p>
-              <p className="ant-upload-hint">支持 JPG / PNG / GIF / WEBP，支持批量上传</p>
+              <p className="ant-upload-hint">?? JPG / PNG / GIF / WEBP / ZIP?ZIP ?????????</p>
             </Upload.Dragger>
             <Space>
               <Switch checked={overwrite} onChange={setOverwrite} />

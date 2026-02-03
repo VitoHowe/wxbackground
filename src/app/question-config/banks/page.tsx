@@ -10,6 +10,7 @@ import {
   Drawer,
   Form,
   Input,
+  Popconfirm,
   Radio,
   Row,
   Select,
@@ -23,7 +24,7 @@ import {
 } from "antd";
 import type { UploadProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { BarsOutlined, InboxOutlined } from "@ant-design/icons";
+import { BarsOutlined, DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import {
   QuestionBanksAdminService,
   type AdminQuestionBankItem,
@@ -51,6 +52,7 @@ const BanksPage: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [chapterStats, setChapterStats] = useState<BankChapterItem[]>([]);
   const [currentBank, setCurrentBank] = useState<AdminQuestionBankItem | null>(null);
+  const [deletingChapterId, setDeletingChapterId] = useState<number | null>(null);
   const [form] = Form.useForm();
   const { message } = App.useApp();
 
@@ -194,6 +196,28 @@ const BanksPage: React.FC = () => {
       }
     } catch (error: any) {
       message.error(error?.message || "获取章节题量失败");
+    }
+  };
+
+  const handleDeleteChapter = async (chapter: BankChapterItem) => {
+    if (!currentBank) return;
+    setDeletingChapterId(chapter.id);
+    try {
+      const res = await QuestionBanksAdminService.deleteBankChapter(currentBank.id, chapter.id);
+      if (res.code === 200) {
+        message.success("章节已删除");
+        await fetchBanks();
+        const refreshed = await QuestionBanksAdminService.getBankChapters(currentBank.id);
+        if (refreshed.code === 200) {
+          setChapterStats(refreshed.data?.chapters || []);
+        }
+        return;
+      }
+      message.error(res.message || "删除章节失败");
+    } catch (error: any) {
+      message.error(error?.message || "删除章节失败");
+    } finally {
+      setDeletingChapterId(null);
     }
   };
 
@@ -456,6 +480,29 @@ const BanksPage: React.FC = () => {
               width: 140,
               render: (_: string, record: BankChapterItem) =>
                 record.subject_display_name || record.subject_chapter_name || "-",
+            },
+            {
+              title: "操作",
+              key: "actions",
+              width: 80,
+              align: "center",
+              render: (_: unknown, record: BankChapterItem) => (
+                <Popconfirm
+                  title="确定删除该章节吗？"
+                  description="该章节下的题目会一起删除"
+                  okText="删除"
+                  cancelText="取消"
+                  onConfirm={() => handleDeleteChapter(record)}
+                >
+                  <Button
+                    danger
+                    size="small"
+                    type="text"
+                    icon={<DeleteOutlined />}
+                    loading={deletingChapterId === record.id}
+                  />
+                </Popconfirm>
+              ),
             },
           ]}
         />

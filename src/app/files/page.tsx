@@ -456,7 +456,7 @@ const FilesListPage: React.FC = () => {
         {previewLoading ? (
           <Text type="secondary">加载中...</Text>
         ) : (
-          <MarkdownPreview source={previewContent} skipHtml />
+          <MarkdownPreview source={previewContent} />
         )}
       </Modal>
     </MainLayout>

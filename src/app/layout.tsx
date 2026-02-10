@@ -1,20 +1,26 @@
 import type { Metadata } from 'next';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { App, ConfigProvider } from 'antd';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Fira_Code, Noto_Sans_SC } from 'next/font/google';
 import zhCN from 'antd/locale/zh_CN';
 import { AuthGuard } from '@/components';
 import { AuthProvider } from '@/context/AuthContext';
 import AntdBridge from '@/components/layout/AntdBridge';
+import { antdTheme } from '@/theme/antdTheme';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const appSans = Noto_Sans_SC({
+  variable: '--font-app-sans',
+  // Keep weights limited to reduce font payload while allowing UI hierarchy.
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
   subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const appMono = Fira_Code({
+  variable: '--font-app-mono',
+  weight: ['400', '500', '600'],
+  display: 'swap',
   subsets: ['latin'],
 });
 
@@ -31,31 +37,18 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${appSans.variable} ${appMono.variable} antialiased`}
       >
         <AntdRegistry>
           <ConfigProvider
             locale={zhCN}
-            theme={{
-              token: {
-                colorPrimary: '#1890ff',
-                borderRadius: 6,
-                fontFamily: 'var(--font-geist-sans)',
-              },
-              components: {
-                Layout: {
-                  headerBg: '#fff',
-                  siderBg: '#001529',
-                },
-                Menu: {
-                  darkItemBg: '#001529',
-                  darkSubMenuItemBg: '#000c17',
-                  darkItemSelectedBg: '#1890ff',
-                },
-              },
-            }}
+            theme={antdTheme}
+            componentSize="middle"
           >
-            <App>
+            <App
+              message={{ maxCount: 3, duration: 2 }}
+              notification={{ placement: 'topRight', duration: 3, showProgress: true }}
+            >
               <AntdBridge>
                 <AuthProvider>
                   <AuthGuard>{children}</AuthGuard>

@@ -1,42 +1,45 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  App,
+  Avatar,
+  Button,
+  Drawer,
+  Dropdown,
+  Grid,
   Layout,
   Menu,
-  Avatar,
-  Dropdown,
-  Button,
-  theme,
   Space,
   Typography,
-  App,
 } from 'antd';
+import type { MenuProps } from 'antd';
 import {
+  BookOutlined,
+  CloudUploadOutlined,
+  DashboardOutlined,
+  LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  DashboardOutlined,
-  UserOutlined,
-  SettingOutlined,
-  LogoutOutlined,
-  CloudUploadOutlined,
-  TeamOutlined,
   QuestionCircleOutlined,
-  BookOutlined,
+  SettingOutlined,
+  TeamOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
-import type { MenuProps } from 'antd';
 import { useAuth } from '@/hooks/useAuth';
 import { usePathname, useRouter } from 'next/navigation';
+import styles from './MainLayout.module.css';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
-// 使用 App.useApp() 提供的 modal 修复静态方法的上下文警告
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
-// 菜单项配置
+const SIDER_WIDTH = 256;
+const SIDER_COLLAPSED_WIDTH = 80;
+
 const menuItems: MenuProps['items'] = [
   {
     key: 'dashboard',
@@ -44,32 +47,20 @@ const menuItems: MenuProps['items'] = [
     label: '仪表盘',
   },
   {
+    type: 'divider',
+  },
+  {
     key: 'file-management',
     icon: <CloudUploadOutlined />,
-    label: '文件管理',
+    label: '文件与解析',
     children: [
       {
         key: 'file-upload',
-        label: '文件上传',
+        label: '文档上传',
       },
       {
         key: 'file-list',
-        label: '文件列表',
-      },
-    ],
-  },
-  {
-    key: 'question-management',
-    icon: <QuestionCircleOutlined />,
-    label: '题库管理',
-    children: [
-      {
-        key: 'question-banks',
-        label: '题库列表',
-      },
-      {
-        key: 'questions',
-        label: '题目管理',
+        label: '解析中心',
       },
     ],
   },
@@ -101,9 +92,30 @@ const menuItems: MenuProps['items'] = [
     ],
   },
   {
+    key: 'question-management',
+    icon: <QuestionCircleOutlined />,
+    label: '题目管理',
+    children: [
+      {
+        key: 'question-banks',
+        label: '题库列表',
+        disabled: true,
+      },
+      {
+        key: 'questions',
+        label: '题目列表',
+        disabled: true,
+      },
+    ],
+  },
+  {
+    type: 'divider',
+  },
+  {
     key: 'user-management',
     icon: <TeamOutlined />,
     label: '用户管理',
+    disabled: true,
   },
   {
     key: 'settings',
@@ -149,7 +161,7 @@ const deriveMenuState = (pathname: string) => {
     ? ['file-management']
     : selectedKey.startsWith('qc-')
       ? ['question-config']
-    : [];
+      : [];
 
   return {
     selectedKeys: [selectedKey],
@@ -159,76 +171,67 @@ const deriveMenuState = (pathname: string) => {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { modal } = App.useApp();
-  const getInitialMenuState = React.useCallback(
-    () => deriveMenuState(pathname),
-    [pathname]
-  );
-  const initialMenuState = getInitialMenuState();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.lg;
+
+  const initialMenuState = useMemo(() => deriveMenuState(pathname), [pathname]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>(
     initialMenuState.selectedKeys
   );
-  const [openKeys, setOpenKeys] = useState<string[]>(
-    initialMenuState.openKeys
-  );
+  const [openKeys, setOpenKeys] = useState<string[]>(initialMenuState.openKeys);
 
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
+  const contentOffset = isMobile
+    ? 0
+    : collapsed
+      ? SIDER_COLLAPSED_WIDTH
+      : SIDER_WIDTH;
 
-  // 处理菜单点击
-  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
-    setSelectedKeys([key]);
-    const targetPath = menuKeyToPath[key];
-
-    if (targetPath) {
-      router.push(targetPath);
-    } else {
-      console.log('导航到:', key);
-    }
-  };
-
-  // 根据当前路径同步选中菜单与展开的子菜单
-  React.useLayoutEffect(() => {
+  useEffect(() => {
     const { selectedKeys: nextSelectedKeys, openKeys: nextOpenKeys } =
       deriveMenuState(pathname);
     setSelectedKeys(nextSelectedKeys);
     setOpenKeys(nextOpenKeys);
+    setMobileOpen(false);
   }, [pathname]);
 
-  // 处理退出登录
+  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
+    const targetPath = menuKeyToPath[key];
+    if (targetPath) {
+      router.push(targetPath);
+    }
+  };
+
   const handleLogout = () => {
     modal.confirm({
       title: '确认退出',
-      content: '您确定要退出登录吗？',
-      okText: '确定',
+      content: '确定要退出登录吗？',
+      okText: '退出',
       cancelText: '取消',
+      okType: 'danger',
       onOk: async () => {
         await logout();
       },
     });
   };
 
-  // 用户下拉菜单
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'profile',
       icon: <UserOutlined />,
       label: '个人信息',
-      onClick: () => {
-        console.log('个人信息');
-      },
+      disabled: true,
     },
     {
       key: 'settings',
       icon: <SettingOutlined />,
       label: '设置',
-      onClick: () => {
-        console.log('设置');
-      },
+      onClick: () => router.push('/settings'),
     },
     {
       type: 'divider',
@@ -242,41 +245,28 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     },
   ];
 
-  return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider
-        trigger={null}
-        collapsible
-        collapsed={collapsed}
-        style={{
-          overflow: 'auto',
-          height: '100vh',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 1000,
-        }}
-      >
-        <div
-          style={{
-            height: 64,
-            margin: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-          }}
-        >
-          <Text
-            style={{
-              color: '#fff',
-              fontSize: collapsed ? 16 : 20,
-              fontWeight: 'bold',
-            }}
-          >
-            {collapsed ? 'WX' : '微信后台'}
-          </Text>
+  const siderNode = (
+    <Sider
+      trigger={null}
+      collapsible
+      collapsed={collapsed}
+      width={SIDER_WIDTH}
+      collapsedWidth={SIDER_COLLAPSED_WIDTH}
+      className={styles.sider}
+    >
+      <div className={styles.brand} role="banner" aria-label="应用导航">
+        <div className={styles.brandMark} aria-hidden="true">
+          WX
         </div>
+        {!collapsed ? (
+          <div className={styles.brandText}>
+            <div className={styles.brandName}>微信后台</div>
+            <div className={styles.brandDesc}>管理控制台</div>
+          </div>
+        ) : null}
+      </div>
+
+      <div className={styles.menu}>
         <Menu
           theme="dark"
           mode="inline"
@@ -284,64 +274,106 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           openKeys={openKeys}
           items={menuItems}
           onClick={handleMenuClick}
-          onOpenChange={keys => setOpenKeys(keys as string[])}
+          onOpenChange={(keys) => setOpenKeys(keys as string[])}
         />
-      </Sider>
+      </div>
+    </Sider>
+  );
 
-      <Layout style={{ marginLeft: collapsed ? 80 : 200 }}>
-        <Header
-          style={{
-            padding: '0 24px',
-            background: colorBgContainer,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            position: 'sticky',
-            top: 0,
-            zIndex: 1,
-            width: '100%',
-            borderBottom: '1px solid #f0f0f0',
-          }}
+  return (
+    <Layout className={styles.shell}>
+      {!isMobile ? siderNode : null}
+
+      {isMobile ? (
+        <Drawer
+          open={mobileOpen}
+          placement="left"
+          width={SIDER_WIDTH}
+          closable={false}
+          onClose={() => setMobileOpen(false)}
+          rootClassName={styles.mobileDrawer}
+          destroyOnClose
         >
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: 64,
-              height: 64,
-            }}
-          />
+          <div className={styles.mobileBrand}>
+            <div className={styles.brandMark} aria-hidden="true">
+              WX
+            </div>
+            <div className={styles.brandText}>
+              <div className={styles.brandName}>微信后台</div>
+              <div className={styles.brandDesc}>管理控制台</div>
+            </div>
+          </div>
 
-          <Space size="middle">
-            <Dropdown
-              menu={{ items: userMenuItems }}
-              placement="bottomRight"
-              arrow
-            >
-              <Space style={{ cursor: 'pointer' }}>
-                <Avatar
-                  size="small"
-                  src={user?.avatar_url}
-                  icon={!user?.avatar_url ? <UserOutlined /> : undefined}
-                />
-                <Text>{user?.nickname || user?.username || '用户'}</Text>
-              </Space>
+          <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={selectedKeys}
+            openKeys={openKeys}
+            items={menuItems}
+            onClick={(e) => {
+              handleMenuClick(e);
+              setMobileOpen(false);
+            }}
+            onOpenChange={(keys) => setOpenKeys(keys as string[])}
+          />
+        </Drawer>
+      ) : null}
+
+      <Layout className={styles.main} style={{ marginLeft: contentOffset }}>
+        <Header className={styles.header}>
+          <div className={styles.headerLeft}>
+            <Button
+              type="text"
+              aria-label={isMobile ? '打开导航' : collapsed ? '展开侧边栏' : '收起侧边栏'}
+              icon={
+                isMobile ? (
+                  <MenuUnfoldOutlined />
+                ) : collapsed ? (
+                  <MenuUnfoldOutlined />
+                ) : (
+                  <MenuFoldOutlined />
+                )
+              }
+              onClick={() => {
+                if (isMobile) {
+                  setMobileOpen(true);
+                } else {
+                  setCollapsed((prev) => !prev);
+                }
+              }}
+              className={styles.headerButton}
+            />
+
+            <Text type="secondary" className={styles.headerHint}>
+              {selectedKeys[0] === 'dashboard' ? '概览' : '数据管理'}
+            </Text>
+          </div>
+
+          <div className={styles.headerRight}>
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+              <div className={styles.userButton} role="button" tabIndex={0}>
+                <Space size={10}>
+                  <Avatar
+                    size="small"
+                    src={user?.avatar_url}
+                    icon={!user?.avatar_url ? <UserOutlined /> : undefined}
+                  />
+                  <div className={styles.userText}>
+                    <div className={styles.userName}>
+                      {user?.nickname || user?.username || '用户'}
+                    </div>
+                    <div className={styles.userMeta}>
+                      {user?.role_id === 1 ? '管理员' : '普通用户'}
+                    </div>
+                  </div>
+                </Space>
+              </div>
             </Dropdown>
-          </Space>
+          </div>
         </Header>
 
-        <Content
-          style={{
-            margin: '24px 16px',
-            padding: 24,
-            minHeight: 280,
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          {children}
+        <Content className={styles.content}>
+          <div className={`${styles.contentInner} app-page`}>{children}</div>
         </Content>
       </Layout>
     </Layout>
@@ -349,3 +381,4 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 };
 
 export default MainLayout;
+

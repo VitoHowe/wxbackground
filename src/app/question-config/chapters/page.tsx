@@ -1,23 +1,21 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { MainLayout, PageHeader } from "@/components";
+import { AppCard, KpiTiles, MainLayout, PageHeader } from "@/components";
 import {
+  App,
   Button,
-  Card,
-  Col,
+  Divider,
   Drawer,
   Form,
   Input,
+  InputNumber,
   Modal,
-  Row,
   Select,
   Space,
-  Statistic,
   Table,
   Tag,
   Typography,
-  App,
   Switch,
   Tooltip,
 } from "antd";
@@ -326,7 +324,11 @@ const ChaptersPage: React.FC = () => {
         dataIndex: "status",
         width: 100,
         render: (value: number) => (
-          <Tag color={value === 1 ? "green" : "default"}>
+          <Tag
+            color={value === 1 ? "success" : "default"}
+            bordered={false}
+            style={{ marginInlineEnd: 0 }}
+          >
             {value === 1 ? "启用" : "停用"}
           </Tag>
         ),
@@ -401,9 +403,39 @@ const ChaptersPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader title="章节管理" subtitle="以科目为维度维护章节基准名与展示名。" />
-      <Card>
-        <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 16 }}>
-          <Col flex="auto">
+
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <KpiTiles
+          items={[
+            {
+              key: "total",
+              title: "章节总数",
+              value: summary.total,
+              tone: "primary",
+            },
+            {
+              key: "enabled",
+              title: "启用",
+              value: summary.enabled,
+              tone: "success",
+            },
+            {
+              key: "disabled",
+              title: "停用",
+              value: summary.disabled,
+              tone: "neutral",
+            },
+            {
+              key: "questions",
+              title: "题目总数",
+              value: summary.questions,
+              tone: "accent",
+            },
+          ]}
+        />
+
+        <AppCard title="章节列表" extra={<Button onClick={() => fetchChapters(subjectId)}>刷新</Button>}>
+          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
             <Space wrap>
               <Select
                 style={{ minWidth: 240 }}
@@ -425,29 +457,23 @@ const ChaptersPage: React.FC = () => {
                 别名映射
               </Button>
             </Space>
-          </Col>
-          <Col>
-            <Space size="large" wrap>
-              <Statistic title="章节总数" value={summary.total} />
-              <Statistic title="启用" value={summary.enabled} />
-              <Statistic title="停用" value={summary.disabled} />
-              <Statistic title="题目总数" value={summary.questions} />
-            </Space>
-          </Col>
-        </Row>
 
-        <Table
-          rowKey="id"
-          dataSource={chapters}
-          columns={columns}
-          loading={loading}
-          pagination={false}
-          size="middle"
-          tableLayout="fixed"
-          scroll={{ x: 960 }}
-          locale={{ emptyText: subjectId ? "暂无章节" : "请先选择科目" }}
-        />
-      </Card>
+            <Divider style={{ margin: 0 }} />
+
+            <Table
+              rowKey="id"
+              dataSource={chapters}
+              columns={columns}
+              loading={loading}
+              pagination={false}
+              size="middle"
+              tableLayout="fixed"
+              scroll={{ x: 960 }}
+              locale={{ emptyText: subjectId ? "暂无章节" : "请先选择科目" }}
+            />
+          </Space>
+        </AppCard>
+      </Space>
 
       <Drawer
         title="章节别名映射"
@@ -456,46 +482,50 @@ const ChaptersPage: React.FC = () => {
         width={520}
         destroyOnClose
       >
-        <Space direction="vertical" size="large" style={{ width: "100%" }}>
-          <Form form={aliasForm} layout="vertical">
-            <Form.Item
-              label="章节别名"
-              name="alias_name"
-              rules={[{ required: true, message: "请输入章节别名" }]}
-            >
-              <Input placeholder="例如：第一章 信息化发展" />
-            </Form.Item>
-            <Form.Item
-              label="归属章节"
-              name="subject_chapter_id"
-              rules={[{ required: true, message: "请选择归属章节" }]}
-            >
-              <Select
-                placeholder="选择科目章节"
-                options={chapters.map((item) => ({
-                  label: `${item.display_name || item.chapter_name}${item.status === 1 ? "" : "（已停用）"}`,
-                  value: item.id,
-                }))}
-              />
-            </Form.Item>
-            <Space>
-              <Button type="primary" onClick={handleCreateAlias} loading={aliasSubmitting}>
-                添加映射
-              </Button>
-              <Button onClick={() => aliasForm.resetFields()}>重置</Button>
-            </Space>
-          </Form>
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <AppCard title="新增映射">
+            <Form form={aliasForm} layout="vertical">
+              <Form.Item
+                label="章节别名"
+                name="alias_name"
+                rules={[{ required: true, message: "请输入章节别名" }]}
+              >
+                <Input placeholder="例如：第一章 信息化发展" />
+              </Form.Item>
+              <Form.Item
+                label="归属章节"
+                name="subject_chapter_id"
+                rules={[{ required: true, message: "请选择归属章节" }]}
+              >
+                <Select
+                  placeholder="选择科目章节"
+                  options={chapters.map((item) => ({
+                    label: `${item.display_name || item.chapter_name}${item.status === 1 ? "" : "（已停用）"}`,
+                    value: item.id,
+                  }))}
+                />
+              </Form.Item>
+              <Space>
+                <Button type="primary" onClick={handleCreateAlias} loading={aliasSubmitting}>
+                  添加映射
+                </Button>
+                <Button onClick={() => aliasForm.resetFields()}>重置</Button>
+              </Space>
+            </Form>
+          </AppCard>
 
-          <Table
-            rowKey="id"
-            dataSource={aliases}
-            columns={aliasColumns}
-            loading={aliasLoading}
-            pagination={false}
-            size="small"
-            tableLayout="fixed"
-            locale={{ emptyText: "暂无别名映射" }}
-          />
+          <AppCard title="映射列表">
+            <Table
+              rowKey="id"
+              dataSource={aliases}
+              columns={aliasColumns}
+              loading={aliasLoading}
+              pagination={false}
+              size="middle"
+              tableLayout="fixed"
+              locale={{ emptyText: "暂无别名映射" }}
+            />
+          </AppCard>
         </Space>
       </Drawer>
 
@@ -506,6 +536,9 @@ const ChaptersPage: React.FC = () => {
         onOk={onSubmit}
         confirmLoading={submitting}
         destroyOnClose
+        okText="保存"
+        cancelText="取消"
+        maskClosable={false}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -519,7 +552,7 @@ const ChaptersPage: React.FC = () => {
             <Input placeholder="可选，给前端展示的名称" />
           </Form.Item>
           <Form.Item label="排序" name="chapter_order">
-            <Input type="number" min={0} />
+            <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item label="启用状态" name="status" valuePropName="checked">
             <Switch checkedChildren="启用" unCheckedChildren="停用" />

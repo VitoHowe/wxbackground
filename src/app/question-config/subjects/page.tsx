@@ -1,17 +1,14 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { MainLayout, PageHeader } from "@/components";
+import { AppCard, KpiTiles, MainLayout, PageHeader } from "@/components";
 import {
   Button,
-  Card,
-  Col,
   Form,
   Input,
+  InputNumber,
   Modal,
-  Row,
   Space,
-  Statistic,
   Table,
   Tag,
   Typography,
@@ -26,7 +23,7 @@ import { SubjectsService, type SubjectItem } from "@/services/subjects";
 const { Text } = Typography;
 
 const StatusTag: React.FC<{ status: number }> = ({ status }) => (
-  <Tag color={status === 1 ? "green" : "default"}>
+  <Tag color={status === 1 ? "success" : "default"} bordered={false} style={{ marginInlineEnd: 0 }}>
     {status === 1 ? "启用" : "停用"}
   </Tag>
 );
@@ -67,14 +64,14 @@ const SubjectsPage: React.FC = () => {
     return { total, enabled, disabled };
   }, [data]);
 
-  const openCreateModal = () => {
+  const openCreateModal = useCallback(() => {
     setEditing(null);
     form.resetFields();
     form.setFieldsValue({ status: true, sort_order: 0 });
     setModalOpen(true);
-  };
+  }, [form]);
 
-  const openEditModal = (record: SubjectItem) => {
+  const openEditModal = useCallback((record: SubjectItem) => {
     setEditing(record);
     form.setFieldsValue({
       name: record.name,
@@ -83,9 +80,9 @@ const SubjectsPage: React.FC = () => {
       status: record.status === 1,
     });
     setModalOpen(true);
-  };
+  }, [form]);
 
-  const handleToggleStatus = (record: SubjectItem) => {
+  const handleToggleStatus = useCallback((record: SubjectItem) => {
     const nextStatus = record.status === 1 ? 0 : 1;
     modal.confirm({
       title: nextStatus === 1 ? "确认启用" : "确认停用",
@@ -106,7 +103,7 @@ const SubjectsPage: React.FC = () => {
         }
       },
     });
-  };
+  }, [fetchSubjects, message, modal]);
 
   const onSubmit = async () => {
     try {
@@ -192,40 +189,61 @@ const SubjectsPage: React.FC = () => {
         ),
       },
     ],
-    []
+    [handleToggleStatus, openEditModal]
   );
 
   return (
     <MainLayout>
-      <PageHeader title="科目管理" subtitle="维护题库科目与状态，仅支持停用不删除。" />
-      <Card>
-        <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 16 }}>
-          <Col flex="auto">
-            <Space>
-              <Button type="primary" onClick={openCreateModal}>
-                新增科目
-              </Button>
-            </Space>
-          </Col>
-          <Col>
-            <Space size="large" wrap>
-              <Statistic title="总科目" value={summary.total} />
-              <Statistic title="启用" value={summary.enabled} />
-              <Statistic title="停用" value={summary.disabled} />
-            </Space>
-          </Col>
-        </Row>
-        <Table
-          rowKey="id"
-          dataSource={data}
-          columns={columns}
-          loading={loading}
-          size="middle"
-          tableLayout="fixed"
-          scroll={{ x: 720 }}
-          pagination={false}
+      <PageHeader
+        title="科目管理"
+        subtitle="维护题库科目与状态，仅支持停用不删除。"
+        extra={
+          <Space>
+            <Button onClick={() => fetchSubjects()}>刷新</Button>
+            <Button type="primary" onClick={openCreateModal}>
+              新增科目
+            </Button>
+          </Space>
+        }
+      />
+
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <KpiTiles
+          items={[
+            {
+              key: "total",
+              title: "科目总数",
+              value: summary.total,
+              tone: "primary",
+            },
+            {
+              key: "enabled",
+              title: "启用",
+              value: summary.enabled,
+              tone: "success",
+            },
+            {
+              key: "disabled",
+              title: "停用",
+              value: summary.disabled,
+              tone: "neutral",
+            },
+          ]}
         />
-      </Card>
+
+        <AppCard title="科目列表">
+          <Table
+            rowKey="id"
+            dataSource={data}
+            columns={columns}
+            loading={loading}
+            size="middle"
+            tableLayout="fixed"
+            scroll={{ x: 720 }}
+            pagination={false}
+          />
+        </AppCard>
+      </Space>
 
       <Modal
         open={modalOpen}
@@ -234,6 +252,9 @@ const SubjectsPage: React.FC = () => {
         onOk={onSubmit}
         confirmLoading={submitting}
         destroyOnClose
+        okText="保存"
+        cancelText="取消"
+        maskClosable={false}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -247,7 +268,7 @@ const SubjectsPage: React.FC = () => {
             <Input placeholder="可选，用于内部识别" />
           </Form.Item>
           <Form.Item label="排序" name="sort_order">
-            <Input type="number" min={0} />
+            <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item label="启用状态" name="status" valuePropName="checked">
             <Switch checkedChildren="启用" unCheckedChildren="停用" />

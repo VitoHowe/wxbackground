@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Typography, Breadcrumb, Space, Button } from 'antd';
+import { Breadcrumb, Button, Space, Typography } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import type { BreadcrumbProps } from 'antd';
+import styles from './PageHeader.module.css';
 
 const { Title, Text } = Typography;
 
@@ -25,43 +26,40 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   showBack = false,
 }) => {
   return (
-    <div style={{ marginBottom: 24 }}>
-      {breadcrumb && (
-        <Breadcrumb items={breadcrumb} style={{ marginBottom: 12 }} />
-      )}
+    <div className={styles.header}>
+      {breadcrumb ? (
+        <Breadcrumb items={breadcrumb} className={styles.breadcrumb} />
+      ) : null}
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 8,
-        }}
-      >
-        <Space align="center">
-          {showBack && (
+      <div className={styles.row}>
+        <div className={styles.titleWrap}>
+          {showBack ? (
             <Button
               type="text"
               icon={<ArrowLeftOutlined />}
               onClick={onBack}
-              style={{ marginRight: 8 }}
+              aria-label="返回"
+              className={styles.backBtn}
             />
-          )}
-          <Title level={2} style={{ margin: 0 }}>
-            {title}
-          </Title>
-        </Space>
+          ) : null}
 
-        {extra && <Space>{extra}</Space>}
+          <div className={styles.titleText}>
+            <Title level={3} className={styles.title}>
+              {title}
+            </Title>
+            {subtitle ? (
+              <Text type="secondary" className={styles.subtitle}>
+                {subtitle}
+              </Text>
+            ) : null}
+          </div>
+        </div>
+
+        {extra ? <Space className={styles.extra}>{extra}</Space> : null}
       </div>
-
-      {subtitle && (
-        <Text type="secondary" style={{ fontSize: 14 }}>
-          {subtitle}
-        </Text>
-      )}
     </div>
   );
 };
 
 export default PageHeader;
+

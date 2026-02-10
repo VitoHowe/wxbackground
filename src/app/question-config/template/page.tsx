@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { App, Button, Card, Space, Table, Tag, Typography } from "antd";
+import { App, Button, Space, Table, Tag, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { MainLayout, PageHeader } from "@/components";
+import { AppCard, CodeBlock, MainLayout, PageHeader } from "@/components";
 import { CopyOutlined, DownloadOutlined, FileTextOutlined } from "@ant-design/icons";
 
 const { Paragraph, Text } = Typography;
@@ -150,12 +150,9 @@ const QuestionBankTemplatePage: React.FC = () => {
       />
 
       <Space direction="vertical" size="large" style={{ width: "100%" }}>
-        <Card>
-          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-            <Paragraph>
-              模板文件已放在 <Text code>public/question-bank-sample-zh.json</Text>，导入时仅识别{" "}
-              <Text code>questions</Text> 数组，章节归属取 <Text code>tags[0]</Text>。
-            </Paragraph>
+        <AppCard
+          title="模板文件"
+          extra={
             <Space>
               <Button
                 type="primary"
@@ -170,34 +167,33 @@ const QuestionBankTemplatePage: React.FC = () => {
                 下载模板
               </Button>
             </Space>
+          }
+        >
+          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            <Paragraph>
+              模板文件已放在 <Text code>public/question-bank-sample-zh.json</Text>，导入时仅识别{" "}
+              <Text code>questions</Text> 数组，章节归属取 <Text code>tags[0]</Text>。
+            </Paragraph>
           </Space>
-        </Card>
+        </AppCard>
 
-        <Card title="一键生成提示词">
+        <AppCard
+          title="提示词"
+          extra={
+            <Button type="primary" onClick={handleCopyPrompt} icon={<CopyOutlined />}>
+              复制提示词
+            </Button>
+          }
+        >
           <Space direction="vertical" size="middle" style={{ width: "100%" }}>
             <Paragraph>
               点击按钮会把提示词复制到剪贴板，可直接粘贴给 AI 模型生成结构化题库 JSON。
             </Paragraph>
-            <Button type="primary" onClick={handleCopyPrompt} icon={<CopyOutlined />}>
-              一键生成提示词
-            </Button>
-            <pre
-              style={{
-                background: "#0f172a",
-                color: "#e2e8f0",
-                padding: 16,
-                borderRadius: 8,
-                maxHeight: 360,
-                overflow: "auto",
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {PROMPT_TEMPLATE}
-            </pre>
+            <CodeBlock title="PROMPT" value={PROMPT_TEMPLATE} />
           </Space>
-        </Card>
+        </AppCard>
 
-        <Card title="题目预览">
+        <AppCard title="题目预览">
           <Table
             rowKey={(record, index) => `${record.question || record.question_no || index}`}
             dataSource={sample?.questions || []}
@@ -209,22 +205,11 @@ const QuestionBankTemplatePage: React.FC = () => {
             scroll={{ x: 960 }}
             locale={{ emptyText: "暂无模板数据" }}
           />
-        </Card>
+        </AppCard>
 
-        <Card title="JSON 模板">
-          <pre
-            style={{
-              background: "#0f172a",
-              color: "#e2e8f0",
-              padding: 16,
-              borderRadius: 8,
-              maxHeight: 360,
-              overflow: "auto",
-            }}
-          >
-            {rawText || "暂无模板数据"}
-          </pre>
-        </Card>
+        <AppCard title="JSON 模板">
+          <CodeBlock title="JSON" value={rawText || "暂无模板数据"} />
+        </AppCard>
       </Space>
     </MainLayout>
   );

@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { MainLayout, PageHeader } from "@/components";
+import { AppCard, KpiTiles, MainLayout, PageHeader } from "@/components";
 import {
   App,
   Button,
-  Card,
   Col,
+  Divider,
   Drawer,
   Form,
   Input,
@@ -15,7 +15,6 @@ import {
   Row,
   Select,
   Space,
-  Statistic,
   Table,
   Tag,
   Typography,
@@ -31,6 +30,7 @@ import {
   type BankChapterItem,
 } from "@/services/questionBanksAdmin";
 import { SubjectsService, type SubjectItem, type SubjectChapterItem } from "@/services/subjects";
+import styles from "./page.module.css";
 
 const { Text } = Typography;
 const { Dragger } = Upload;
@@ -117,13 +117,13 @@ const BanksPage: React.FC = () => {
   }, [fetchChapters, fetchBanks, subjectId]);
 
   const summary = useMemo(() => {
-    const totalBanks = banks.length;
-    const totalQuestions = banks.reduce((acc, item) => acc + (item.total_questions || 0), 0);
-    const totalChapters = banks.reduce((acc, item) => acc + (item.chapter_count || 0), 0);
+    const totalBanks = total || banks.length;
+    const pageQuestions = banks.reduce((acc, item) => acc + (item.total_questions || 0), 0);
+    const pageChapters = banks.reduce((acc, item) => acc + (item.chapter_count || 0), 0);
     const completed = banks.filter((item) => item.parse_status === "completed").length;
     const failed = banks.filter((item) => item.parse_status === "failed").length;
-    return { totalBanks, totalQuestions, totalChapters, completed, failed };
-  }, [banks]);
+    return { totalBanks, pageQuestions, pageChapters, completed, failed };
+  }, [banks, total]);
 
   const draggerProps: UploadProps = {
     name: "file",
@@ -285,15 +285,48 @@ const BanksPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader title="题库管理" subtitle="新建题库并绑定科目，支持整库或章节级 JSON 导入。" />
-      <Row gutter={16}>
-        <Col xs={24} xl={14}>
-          <Card title="题库列表">
-            <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 16 }}>
-              <Col flex="auto">
+
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <KpiTiles
+          items={[
+            {
+              key: "banks",
+              title: "题库总数",
+              value: summary.totalBanks,
+              tone: "primary",
+            },
+            {
+              key: "questions",
+              title: "本页题量",
+              value: summary.pageQuestions,
+              tone: "accent",
+            },
+            {
+              key: "chapters",
+              title: "本页章节",
+              value: summary.pageChapters,
+              tone: "success",
+            },
+            {
+              key: "status",
+              title: "完成/失败（本页）",
+              value: `${summary.completed}/${summary.failed}`,
+              tone: "neutral",
+            },
+          ]}
+        />
+
+        <Row gutter={[12, 12]}>
+          <Col xs={24} xl={14}>
+            <AppCard
+              title="题库列表"
+              extra={<Button onClick={() => fetchBanks()}>刷新</Button>}
+            >
+              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
                 <Space wrap>
                   <Select
                     placeholder="筛选科目"
-                    style={{ minWidth: 220 }}
+                    style={{ minWidth: 240 }}
                     allowClear
                     value={subjectId ?? undefined}
                     onChange={(value) => {
@@ -310,53 +343,47 @@ const BanksPage: React.FC = () => {
                       value: s.id,
                     }))}
                   />
-                  <Button onClick={() => fetchBanks()}>刷新</Button>
                 </Space>
-              </Col>
-              <Col>
-                <Space size="large" wrap>
-                  <Statistic title="题库数" value={summary.totalBanks} />
-                  <Statistic title="题目总量" value={summary.totalQuestions} />
-                  <Statistic title="章节总量" value={summary.totalChapters} />
-                  <Statistic title="完成/失败" value={`${summary.completed}/${summary.failed}`} />
-                </Space>
-              </Col>
-            </Row>
-            <Table
-              rowKey="id"
-              dataSource={banks}
-              columns={columns}
-              loading={loading}
-              size="middle"
-              tableLayout="fixed"
-              scroll={{ x: 960 }}
-              pagination={{
-                current: page,
-                pageSize: limit,
-                total,
-                onChange: (nextPage, nextSize) => {
-                  setPage(nextPage);
-                  setLimit(nextSize || limit);
-                },
-              }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} xl={10}>
-          <Card title="题库导入">
-            <Form form={form} layout="vertical">
-              <Form.Item label="导入方式" name="importMode" initialValue="full">
-                <Radio.Group
-                  onChange={(e) => {
-                    setImportMode(e.target.value);
-                    setFile(null);
-                    form.resetFields(["bankId", "subjectChapterId"]);
+
+                <Divider style={{ margin: 0 }} />
+
+                <Table
+                  rowKey="id"
+                  dataSource={banks}
+                  columns={columns}
+                  loading={loading}
+                  size="middle"
+                  tableLayout="fixed"
+                  scroll={{ x: 960 }}
+                  pagination={{
+                    current: page,
+                    pageSize: limit,
+                    total,
+                    onChange: (nextPage, nextSize) => {
+                      setPage(nextPage);
+                      setLimit(nextSize || limit);
+                    },
                   }}
-                >
-                  <Radio.Button value="full">整库导入</Radio.Button>
-                  <Radio.Button value="chapter">章节导入</Radio.Button>
-                </Radio.Group>
-              </Form.Item>
+                />
+              </Space>
+            </AppCard>
+          </Col>
+
+          <Col xs={24} xl={10}>
+            <AppCard title="JSON 导入" extra={<Tag bordered={false}>.json</Tag>}>
+              <Form form={form} layout="vertical">
+                <Form.Item label="导入方式" name="importMode" initialValue="full">
+                  <Radio.Group
+                    onChange={(e) => {
+                      setImportMode(e.target.value);
+                      setFile(null);
+                      form.resetFields(["bankId", "subjectChapterId"]);
+                    }}
+                  >
+                    <Radio.Button value="full">整库导入</Radio.Button>
+                    <Radio.Button value="chapter">章节导入</Radio.Button>
+                  </Radio.Group>
+                </Form.Item>
 
               <Form.Item
                 label="绑定科目"
@@ -419,12 +446,12 @@ const BanksPage: React.FC = () => {
               )}
 
               <Form.Item label="上传 JSON 文件" required>
-                <Dragger {...draggerProps} style={{ padding: 12 }}>
+                <Dragger {...draggerProps} className={styles.dragger}>
                   <p className="ant-upload-drag-icon">
                     <InboxOutlined />
                   </p>
                   <p className="ant-upload-text">点击或拖拽 JSON 文件到此处</p>
-                  <p className="ant-upload-hint">请使用与 Gemini 题库一致的 JSON 结构</p>
+                  <p className={styles.hint}>请使用与 Gemini 题库一致的 JSON 结构</p>
                 </Dragger>
                 {file && (
                   <Text type="secondary" style={{ marginTop: 8, display: "block" }}>
@@ -447,9 +474,10 @@ const BanksPage: React.FC = () => {
                 </Button>
               </Space>
             </Form>
-          </Card>
-        </Col>
-      </Row>
+            </AppCard>
+          </Col>
+        </Row>
+      </Space>
 
       <Drawer
         title={currentBank ? `章节题量 · ${currentBank.name}` : "章节题量"}

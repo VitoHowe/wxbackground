@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import type { LoginParams, RegisterParams } from '@/services/auth';
+import styles from './page.module.css';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -94,30 +95,27 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px',
-      }}
-    >
+    <div className={styles.wrapper}>
       <Card
-        style={{
-          width: '100%',
-          maxWidth: 400,
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-        }}
-        bodyStyle={{ padding: '32px' }}
+        bordered={false}
+        className={styles.card}
+        bodyStyle={{ padding: 28 }}
       >
         {/* 标题区域 */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
-            微信后台管理
-          </Title>
-          <Text type="secondary">欢迎使用微信小程序后台管理系统</Text>
+        <div className={styles.header}>
+          <div className={styles.brand} aria-label="微信后台管理系统">
+            <div className={styles.brandMark} aria-hidden="true">
+              WX
+            </div>
+            <div className={styles.brandText}>
+              <Title level={2} className={styles.title}>
+                微信后台
+              </Title>
+              <Text type="secondary" className={styles.subtitle}>
+                成熟的题库与内容管理控制台
+              </Text>
+            </div>
+          </div>
         </div>
 
         {/* 错误提示 */}
@@ -277,10 +275,8 @@ const LoginPage: React.FC = () => {
         <Divider />
 
         {/* 底部信息 */}
-        <div style={{ textAlign: 'center' }}>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            © 2024 微信小程序后台管理系统
-          </Text>
+        <div className={styles.footer}>
+          <Text type="secondary">© 2026 微信小程序后台管理系统</Text>
         </div>
       </Card>
     </div>

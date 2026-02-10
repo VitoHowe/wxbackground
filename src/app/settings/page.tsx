@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   App,
   Button,
-  Card,
   Form,
   Input,
   Modal,
@@ -17,6 +16,8 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
+  AppCard,
+  KpiTiles,
   MainLayout,
   MarkdownModal,
   PageHeader,
@@ -73,6 +74,14 @@ const SettingsPage: React.FC = () => {
   useEffect(() => {
     void fetchModels();
   }, [fetchModels]);
+
+  const summary = useMemo(() => {
+    const total = models.length;
+    const enabled = models.filter(item => item.status === 1).length;
+    const disabled = total - enabled;
+    const types = new Set(models.map(item => item.type).filter(Boolean)).size;
+    return { total, enabled, disabled, types };
+  }, [models]);
 
   const onTypeChange = (value: string) => {
     form.setFieldValue('type', value);
@@ -356,15 +365,26 @@ const SettingsPage: React.FC = () => {
         }
       />
 
-      <Card title="供应商配置" bordered={false}>
-        <Table<ModelConfig>
-          rowKey="id"
-          loading={loading}
-          dataSource={models}
-          columns={columns}
-          pagination={false}
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <KpiTiles
+          items={[
+            { key: 'total', title: '供应商总数', value: summary.total, tone: 'primary' },
+            { key: 'enabled', title: '启用', value: summary.enabled, tone: 'success' },
+            { key: 'disabled', title: '停用', value: summary.disabled, tone: 'neutral' },
+            { key: 'types', title: '类型数', value: summary.types, tone: 'accent' },
+          ]}
         />
-      </Card>
+
+        <AppCard title="供应商配置">
+          <Table<ModelConfig>
+            rowKey="id"
+            loading={loading}
+            dataSource={models}
+            columns={columns}
+            pagination={false}
+          />
+        </AppCard>
+      </Space>
 
       <Modal
         open={modelModalOpen}

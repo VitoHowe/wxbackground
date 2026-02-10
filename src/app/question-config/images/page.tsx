@@ -4,27 +4,24 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   App,
   Button,
-  Card,
-  Col,
   Form,
   Image,
   Input,
   Modal,
-  Row,
   Select,
   Space,
-  Statistic,
   Switch,
   Table,
   Tag,
   Tooltip,
   Upload,
   Typography,
+  Divider,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import type { UploadFile } from "antd/es/upload/interface";
 import { DeleteOutlined, EditOutlined, InboxOutlined, ThunderboltOutlined } from "@ant-design/icons";
-import { MainLayout, PageHeader } from "@/components";
+import { AppCard, KpiTiles, MainLayout, PageHeader } from "@/components";
 import { SubjectsService, type SubjectItem } from "@/services/subjects";
 import {
   QuestionBanksAdminService,
@@ -32,6 +29,7 @@ import {
   type BankImageItem,
 } from "@/services/questionBanksAdmin";
 import { API_CONFIG } from "@/constants/api";
+import styles from "./page.module.css";
 
 const { Paragraph, Text } = Typography;
 
@@ -363,55 +361,88 @@ const ImagesPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <PageHeader title="题库图片管理" subtitle="支持批量上传、重命名与引用统计。" />
-      <Space direction="vertical" size="large" style={{ width: "100%" }}>
-        <Card>
-          <Row gutter={[16, 16]} align="middle">
-            <Col flex="auto">
-              <Space wrap>
-            <Select
-              style={{ minWidth: 220 }}
-              placeholder="选择科目"
-              value={subjectId ?? undefined}
-              onChange={(value) => setSubjectId(value)}
-              options={subjects.map((s) => ({
-                label: `${s.name}${s.status === 1 ? "" : "（已停用）"}`,
-                value: s.id,
-              }))}
-            />
-            <Select
-              style={{ minWidth: 260 }}
-              placeholder="选择题库"
-              value={bankId ?? undefined}
-              onChange={(value) => setBankId(value)}
-              options={banks.map((b) => ({
-                label: b.name,
-                value: b.id,
-              }))}
-            />
-            <Button onClick={() => fetchImages(bankId)} disabled={!bankId}>
-              刷新
-            </Button>
-          </Space>
-        </Col>
-        <Col>
-          <Space size="large" wrap>
-            <Statistic title="图片总数" value={summary.total} />
-            <Statistic title="被引用图片" value={summary.referencedImages} />
-            <Statistic title="引用次数" value={summary.references} />
-            <Statistic title="总大小" value={formatBytes(summary.totalSize)} />
-          </Space>
-        </Col>
-      </Row>
-    </Card>
+      <PageHeader
+        title="题库图片管理"
+        subtitle="支持批量上传、重命名与引用统计。"
+        extra={
+          <Button onClick={() => fetchImages(bankId)} disabled={!bankId}>
+            刷新
+          </Button>
+        }
+      />
 
-        <Card title="批量上传">
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <AppCard title="筛选">
+          <div className={styles.toolbar}>
+            <Space wrap>
+              <Select
+                style={{ minWidth: 220 }}
+                placeholder="选择科目"
+                value={subjectId ?? undefined}
+                onChange={(value) => setSubjectId(value)}
+                options={subjects.map((s) => ({
+                  label: `${s.name}${s.status === 1 ? "" : "（已停用）"}`,
+                  value: s.id,
+                }))}
+              />
+              <Select
+                style={{ minWidth: 260 }}
+                placeholder="选择题库"
+                value={bankId ?? undefined}
+                onChange={(value) => setBankId(value)}
+                options={banks.map((b) => ({
+                  label: b.name,
+                  value: b.id,
+                }))}
+              />
+              <Button onClick={() => fetchImages(bankId)} disabled={!bankId}>
+                刷新
+              </Button>
+            </Space>
+            <Text type="secondary">选择题库后，可查看与上传图片资源</Text>
+          </div>
+        </AppCard>
+
+        <KpiTiles
+          items={[
+            {
+              key: "total",
+              title: "图片总数",
+              value: summary.total,
+              tone: "primary",
+            },
+            {
+              key: "referencedImages",
+              title: "被引用图片",
+              value: summary.referencedImages,
+              tone: "accent",
+            },
+            {
+              key: "references",
+              title: "引用次数",
+              value: summary.references,
+              tone: "success",
+            },
+            {
+              key: "size",
+              title: "总大小",
+              value: formatBytes(summary.totalSize),
+              tone: "neutral",
+            },
+          ]}
+        />
+
+        <AppCard title="批量上传">
           <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-            <Paragraph>
+            <Paragraph style={{ marginBottom: 0 }}>
               图片文件将保存到 <Text code>public/question-banks/&lt;bankId&gt;/images</Text>，题干中使用{" "}
               <Text code>${"{images/xxx.jpg}"}</Text> 进行引用。
             </Paragraph>
+
+            <Divider style={{ margin: "2px 0 6px" }} />
+
             <Upload.Dragger
+              className={styles.dragger}
               multiple
               accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.zip"
               fileList={fileList}
@@ -425,22 +456,40 @@ const ImagesPage: React.FC = () => {
                 <InboxOutlined />
               </p>
               <p className="ant-upload-text">点击或拖拽图片到此处</p>
-              <p className="ant-upload-hint">?? JPG / PNG / GIF / WEBP / ZIP?ZIP ?????????</p>
+              <p className={styles.hint}>
+                支持 JPG / PNG / GIF / WEBP / ZIP，ZIP 将自动解压并上传其中图片。
+              </p>
             </Upload.Dragger>
-            <Space>
+
+            <div className={styles.toggleRow}>
               <Switch checked={overwrite} onChange={setOverwrite} />
               <Text>允许覆盖同名图片</Text>
-            </Space>
-            <Button type="primary" loading={uploading} onClick={handleUpload} disabled={!bankId}>
-              开始上传
-            </Button>
-          </Space>
-        </Card>
+            </div>
 
-        <Card title="图片列表">
-          <Paragraph type="secondary" style={{ marginBottom: 16 }}>
-            引用题目数表示图片在题干/解析/答案/选项中的占位符被多少道题使用。
-          </Paragraph>
+            <Space>
+              <Button
+                type="primary"
+                loading={uploading}
+                onClick={handleUpload}
+                disabled={!bankId || fileList.length === 0}
+              >
+                开始上传
+              </Button>
+              <Button onClick={() => setFileList([])} disabled={fileList.length === 0}>
+                清空
+              </Button>
+            </Space>
+          </Space>
+        </AppCard>
+
+        <AppCard
+          title="图片列表"
+          extra={
+            <Text type="secondary">
+              引用题目数表示图片在题干/解析/答案/选项中的占位符被多少道题使用
+            </Text>
+          }
+        >
           <Table
             rowKey="filename"
             dataSource={resolvedImages}
@@ -466,7 +515,7 @@ const ImagesPage: React.FC = () => {
             }}
             locale={{ emptyText: bankId ? "暂无图片" : "请先选择题库" }}
           />
-        </Card>
+        </AppCard>
       </Space>
 
       <Modal
@@ -476,6 +525,9 @@ const ImagesPage: React.FC = () => {
         onCancel={() => setRenameOpen(false)}
         confirmLoading={renameSubmitting}
         destroyOnClose
+        okText="保存"
+        cancelText="取消"
+        maskClosable={false}
       >
         <Form form={renameForm} layout="vertical">
           <Form.Item label="当前文件名">

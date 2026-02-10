@@ -1,0 +1,16 @@
+.dragger :global(.ant-upload-drag) {
+  border-radius: 14px;
+  border: 1px dashed rgba(15, 23, 42, 0.18);
+  background: rgba(248, 250, 252, 0.65);
+}
+
+.dragger :global(.ant-upload-drag:hover) {
+  border-color: rgba(37, 99, 235, 0.55);
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.selected {
+  margin-top: 10px;
+  display: block;
+}
+

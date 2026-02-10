@@ -1,0 +1,85 @@
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1024px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.actionsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .actionsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kvList {
+  display: grid;
+  gap: 10px;
+}
+
+.kvRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(248, 250, 252, 0.7);
+}
+
+.kvKey {
+  color: rgba(71, 85, 105, 0.92);
+}
+
+.kvValue {
+  color: rgba(15, 23, 42, 0.92);
+  font-weight: 800;
+}
+
+.activity {
+  display: grid;
+  gap: 12px;
+}
+
+.activityItem {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(248, 250, 252, 0.68);
+}
+
+.activityIcon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--app-primary);
+}
+
+.activityTitle {
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.92);
+}
+
+.activityDesc {
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(71, 85, 105, 0.92);
+  line-height: 1.55;
+}
+

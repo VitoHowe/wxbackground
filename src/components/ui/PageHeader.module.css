@@ -1,0 +1,54 @@
+.header {
+  margin-bottom: 18px;
+}
+
+.breadcrumb {
+  margin-bottom: 10px;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.titleWrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.titleText {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: rgba(15, 23, 42, 0.92);
+}
+
+.subtitle {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(71, 85, 105, 0.92);
+}
+
+.extra {
+  margin-top: 2px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.backBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  margin-top: 2px;
+}
+

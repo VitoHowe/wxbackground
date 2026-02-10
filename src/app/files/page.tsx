@@ -1,19 +1,15 @@
 ﻿'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { MainLayout, PageHeader } from '@/components';
+import { AppCard, KpiTiles, MainLayout, PageHeader } from '@/components';
 import {
-  Card,
   Table,
   Tag,
   Space,
   Typography,
   Select,
   Pagination,
-  Row,
-  Col,
   App,
-  Statistic,
   Button,
   Divider,
   Empty,
@@ -32,6 +28,8 @@ import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import MarkdownPreview from '@uiw/react-markdown-preview';
 import { FilesService, type FileItem, type FileStatus, type ChapterItem } from '@/services/files';
+import { useRouter } from 'next/navigation';
+import styles from './page.module.css';
 
 const { Text } = Typography;
 
@@ -78,6 +76,7 @@ const FilesListPage: React.FC = () => {
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewContent, setPreviewContent] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
+  const router = useRouter();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -292,55 +291,79 @@ const FilesListPage: React.FC = () => {
   const stats = useMemo(() => {
     return data.reduce(
       (acc, item) => {
-        acc.total += 1;
         if (item.parse_status === 'completed') acc.completed += 1;
         if (item.parse_status === 'pending' || item.parse_status === 'parsing') acc.pending += 1;
         acc.chapters += item.chapter_count || 0;
         return acc;
       },
-      { total: 0, completed: 0, pending: 0, chapters: 0 }
+      { completed: 0, pending: 0, chapters: 0 }
     );
   }, [data]);
 
   return (
     <MainLayout>
-      <PageHeader title="Markdown 解析中心" subtitle="上传 Markdown 文档并自动拆分章节" />
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Card bordered={false} style={{ background: '#f7f9fc' }}>
-          <Row gutter={24} justify="space-between">
-            <Col xs={24} sm={12} md={6}>
-              <Statistic title="文档总数" value={stats.total} prefix={<FileTextOutlined />} valueStyle={{ fontSize: 24 }} />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Statistic title="已完成" value={stats.completed} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#52c41a', fontSize: 24 }} />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Statistic title="待处理" value={stats.pending} prefix={<SyncOutlined />} valueStyle={{ color: '#faad14', fontSize: 24 }} />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Statistic title="章节总数" value={stats.chapters} prefix={<CloudUploadOutlined />} valueStyle={{ color: '#1677ff', fontSize: 24 }} />
-            </Col>
-          </Row>
-        </Card>
-
-        <Card
-          bordered={false}
-          bodyStyle={{ padding: 24 }}
-          extra={
-            <Button icon={<SyncOutlined />} onClick={refreshList} loading={loading || refreshing}>
+      <PageHeader
+        title="Markdown 解析中心"
+        subtitle="上传 Markdown 文档并自动拆分章节"
+        extra={
+          <Space>
+            <Button onClick={() => router.push('/files/upload')}>
+              上传文档
+            </Button>
+            <Button
+              icon={<SyncOutlined />}
+              onClick={refreshList}
+              loading={loading || refreshing}
+            >
               刷新
             </Button>
-          }
-        >
+          </Space>
+        }
+      />
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <KpiTiles
+          items={[
+            {
+              key: 'total',
+              title: '文档总数',
+              value: total,
+              prefix: <FileTextOutlined />,
+              tone: 'primary',
+            },
+            {
+              key: 'completed',
+              title: '本页已完成',
+              value: stats.completed,
+              prefix: <CheckCircleOutlined />,
+              tone: 'success',
+            },
+            {
+              key: 'pending',
+              title: '本页待处理',
+              value: stats.pending,
+              prefix: <SyncOutlined />,
+              tone: 'warning',
+            },
+            {
+              key: 'chapters',
+              title: '本页章节',
+              value: stats.chapters,
+              prefix: <CloudUploadOutlined />,
+              tone: 'accent',
+            },
+          ]}
+        />
+
+        <AppCard title="文档列表">
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            <Row gutter={[16, 16]} align="middle">
-              <Col xs={24} sm={12} md={8}>
-                <Text type="secondary">解析状态</Text>
+            <div className={styles.filters}>
+              <div className={styles.filterItem}>
+                <div className={styles.filterLabel}>解析状态</div>
                 <Select
                   allowClear
                   placeholder="全部"
                   value={status}
-                  onChange={(value) => {
+                  onChange={value => {
                     setPage(1);
                     setStatus(value as FileStatus | undefined);
                   }}
@@ -350,26 +373,24 @@ const FilesListPage: React.FC = () => {
                     { label: '已完成', value: 'completed' },
                     { label: '解析失败', value: 'failed' },
                   ]}
-                  style={{ width: '100%', marginTop: 8 }}
-                  size="large"
+                  style={{ width: '100%' }}
                 />
-              </Col>
-              <Col xs={24} sm={12} md={8}>
-                <Text type="secondary">每页数量</Text>
+              </div>
+              <div className={styles.filterItem}>
+                <div className={styles.filterLabel}>每页数量</div>
                 <Select
                   value={limit}
-                  onChange={(value) => {
+                  onChange={value => {
                     setPage(1);
                     setLimit(value);
                   }}
-                  options={[10, 20, 50, 100].map((n) => ({ label: `${n} 条/页`, value: n }))}
-                  style={{ width: '100%', marginTop: 8 }}
-                  size="large"
+                  options={[10, 20, 50, 100].map(n => ({ label: `${n} 条/页`, value: n }))}
+                  style={{ width: '100%' }}
                 />
-              </Col>
-            </Row>
+              </div>
+            </div>
 
-            <Divider style={{ margin: '8px 0 16px' }} />
+            <Divider style={{ margin: '2px 0 12px' }} />
 
             <Table
               rowKey="id"
@@ -377,13 +398,12 @@ const FilesListPage: React.FC = () => {
               dataSource={data}
               loading={loading}
               pagination={false}
-              bordered
               size="middle"
               scroll={{ x: 980 }}
               locale={{ emptyText: <Empty description="暂无 Markdown 文档" /> }}
             />
 
-            <div style={{ textAlign: 'right' }}>
+            <div className={styles.pagination}>
               <Pagination
                 current={page}
                 pageSize={limit}
@@ -394,7 +414,7 @@ const FilesListPage: React.FC = () => {
               />
             </div>
           </Space>
-        </Card>
+        </AppCard>
       </Space>
 
       <Drawer
@@ -402,6 +422,7 @@ const FilesListPage: React.FC = () => {
         open={chapterOpen}
         onClose={() => setChapterOpen(false)}
         width={520}
+        destroyOnClose
       >
         <Table
           rowKey="id"
@@ -452,6 +473,7 @@ const FilesListPage: React.FC = () => {
         footer={null}
         width={900}
         destroyOnClose
+        maskClosable={false}
       >
         {previewLoading ? (
           <Text type="secondary">加载中...</Text>

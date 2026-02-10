@@ -23,7 +23,10 @@ ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 RUN pnpm build
 
 # Keep only production dependencies for runtime.
-RUN pnpm prune --prod
+# NOTE: `pnpm prune --prod` may re-run lifecycle scripts (e.g. `prepare`).
+# This project has `prepare: husky install` but husky is a devDependency,
+# so pruning first can make `husky` unavailable and fail the build.
+RUN pnpm prune --prod --ignore-scripts
 
 # ===================================
 # Stage 2: Production - runtime
@@ -51,4 +54,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3007/api/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
 CMD ["node_modules/.bin/next", "start", "-p", "3007"]
-

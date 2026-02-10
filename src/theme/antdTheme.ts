@@ -32,6 +32,10 @@ export const antdTheme: ThemeConfig = {
     Layout: {
       bodyBg: 'transparent',
       headerBg: 'rgba(248, 250, 252, 0.86)',
+      // Antd Layout header defaults are derived from `controlHeight`.
+      // We want a compact, fixed-height admin header aligned to our own gutters.
+      headerHeight: 64,
+      headerPadding: '0 var(--app-shell-gutter)',
       siderBg: '#0B1220',
     },
     Menu: {
@@ -89,4 +93,3 @@ export const antdTheme: ThemeConfig = {
     },
   },
 };
-

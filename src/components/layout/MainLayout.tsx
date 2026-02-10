@@ -186,12 +186,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   );
   const [openKeys, setOpenKeys] = useState<string[]>(initialMenuState.openKeys);
 
-  const contentOffset = isMobile
-    ? 0
-    : collapsed
-      ? SIDER_COLLAPSED_WIDTH
-      : SIDER_WIDTH;
-
   useEffect(() => {
     const { selectedKeys: nextSelectedKeys, openKeys: nextOpenKeys } =
       deriveMenuState(pathname);
@@ -319,7 +313,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </Drawer>
       ) : null}
 
-      <Layout className={styles.main} style={{ marginLeft: contentOffset }}>
+      <Layout className={styles.main}>
         <Header className={styles.header}>
           <div className={styles.headerLeft}>
             <Button
@@ -381,4 +375,3 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 };
 
 export default MainLayout;
-

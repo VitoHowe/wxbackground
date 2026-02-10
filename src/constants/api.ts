@@ -2,7 +2,7 @@
  * API 基础配置
  */
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api',
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://wxnode.mayday.qzz.io/api',
   TIMEOUT: 10000,
   TOKEN_KEY: 'wx_admin_token',
   REFRESH_TOKEN_KEY: 'wx_admin_refresh_token',

@@ -1,5 +1,6 @@
 .shell {
   min-height: 100vh;
+  --app-shell-gutter: clamp(14px, 1.6vw, 28px);
 }
 
 .sider {
@@ -74,7 +75,7 @@
   top: 0;
   z-index: 50;
   height: 64px;
-  padding: 0 16px;
+  padding: 0 var(--app-shell-gutter);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -137,13 +138,13 @@
 }
 
 .content {
-  padding: 20px 20px 32px;
+  padding: 20px var(--app-shell-gutter) 32px;
 }
 
 .contentInner {
-  margin: 0 auto;
   width: 100%;
-  max-width: 1440px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .mobileDrawer :global(.ant-drawer-body) {
@@ -163,4 +164,3 @@
   background: rgba(148, 163, 184, 0.06);
   border: 1px solid rgba(148, 163, 184, 0.12);
 }
-

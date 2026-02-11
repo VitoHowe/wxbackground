@@ -33,6 +33,15 @@ import styles from './page.module.css';
 
 const { Text } = Typography;
 
+const resolvePopupContainer = (triggerNode: HTMLElement): HTMLElement => {
+  return (
+    (triggerNode.closest('.ant-drawer-body') as HTMLElement | null) ||
+    (triggerNode.closest('.ant-modal-body') as HTMLElement | null) ||
+    triggerNode.parentElement ||
+    document.body
+  );
+};
+
 const STATUS_COLORS: Record<FileStatus, string> = {
   pending: 'default',
   parsing: 'processing',
@@ -363,6 +372,7 @@ const FilesListPage: React.FC = () => {
                   allowClear
                   placeholder="全部"
                   value={status}
+                  getPopupContainer={resolvePopupContainer}
                   onChange={value => {
                     setPage(1);
                     setStatus(value as FileStatus | undefined);
@@ -380,6 +390,7 @@ const FilesListPage: React.FC = () => {
                 <div className={styles.filterLabel}>每页数量</div>
                 <Select
                   value={limit}
+                  getPopupContainer={resolvePopupContainer}
                   onChange={value => {
                     setPage(1);
                     setLimit(value);

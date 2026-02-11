@@ -1,6 +1,14 @@
 .shell {
   min-height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   --app-shell-gutter: clamp(14px, 1.6vw, 28px);
+}
+
+@supports not (height: 100dvh) {
+  .shell {
+    height: 100vh;
+  }
 }
 
 .sider {
@@ -66,7 +74,9 @@
 }
 
 .main {
-  min-height: 100vh;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
   background: transparent;
 }
 
@@ -141,7 +151,13 @@
 }
 
 .content {
+  flex: 1;
+  min-height: 0;
   padding: 20px var(--app-shell-gutter) 32px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .contentInner {

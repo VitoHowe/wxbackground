@@ -37,6 +37,15 @@ const { Dragger } = Upload;
 
 type ImportMode = "full" | "chapter";
 
+const resolvePopupContainer = (triggerNode: HTMLElement): HTMLElement => {
+  return (
+    (triggerNode.closest(".ant-drawer-body") as HTMLElement | null) ||
+    (triggerNode.closest(".ant-modal-body") as HTMLElement | null) ||
+    triggerNode.parentElement ||
+    document.body
+  );
+};
+
 const BanksPage: React.FC = () => {
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [subjectId, setSubjectId] = useState<number | null>(null);
@@ -328,6 +337,9 @@ const BanksPage: React.FC = () => {
                     placeholder="筛选科目"
                     style={{ minWidth: 240 }}
                     allowClear
+                    showSearch
+                    optionFilterProp="label"
+                    getPopupContainer={resolvePopupContainer}
                     value={subjectId ?? undefined}
                     onChange={(value) => {
                       setSubjectId(value ?? null);
@@ -392,6 +404,9 @@ const BanksPage: React.FC = () => {
               >
                 <Select
                   placeholder="选择科目"
+                  showSearch
+                  optionFilterProp="label"
+                  getPopupContainer={resolvePopupContainer}
                   options={subjects.map((s) => ({
                     label: `${s.name}${s.status === 1 ? "" : "（已停用）"}`,
                     value: s.id,
@@ -423,6 +438,9 @@ const BanksPage: React.FC = () => {
                   >
                     <Select
                       placeholder="选择已绑定科目的题库"
+                      showSearch
+                      optionFilterProp="label"
+                      getPopupContainer={resolvePopupContainer}
                       options={filteredBanks.map((bank) => ({
                         label: bank.name,
                         value: bank.id,
@@ -436,6 +454,9 @@ const BanksPage: React.FC = () => {
                   >
                     <Select
                       placeholder="选择科目章节"
+                      showSearch
+                      optionFilterProp="label"
+                      getPopupContainer={resolvePopupContainer}
                       options={chapters.map((chapter) => ({
                         label: chapter.display_name || chapter.chapter_name,
                         value: chapter.id,

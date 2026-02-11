@@ -33,6 +33,15 @@ import styles from "./page.module.css";
 
 const { Paragraph, Text } = Typography;
 
+const resolvePopupContainer = (triggerNode: HTMLElement): HTMLElement => {
+  return (
+    (triggerNode.closest(".ant-drawer-body") as HTMLElement | null) ||
+    (triggerNode.closest(".ant-modal-body") as HTMLElement | null) ||
+    triggerNode.parentElement ||
+    document.body
+  );
+};
+
 const ImagesPage: React.FC = () => {
   const { message, modal } = App.useApp();
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
@@ -379,6 +388,7 @@ const ImagesPage: React.FC = () => {
                 style={{ minWidth: 220 }}
                 placeholder="选择科目"
                 value={subjectId ?? undefined}
+                getPopupContainer={resolvePopupContainer}
                 onChange={(value) => setSubjectId(value)}
                 options={subjects.map((s) => ({
                   label: `${s.name}${s.status === 1 ? "" : "（已停用）"}`,
@@ -389,6 +399,7 @@ const ImagesPage: React.FC = () => {
                 style={{ minWidth: 260 }}
                 placeholder="选择题库"
                 value={bankId ?? undefined}
+                getPopupContainer={resolvePopupContainer}
                 onChange={(value) => setBankId(value)}
                 options={banks.map((b) => ({
                   label: b.name,

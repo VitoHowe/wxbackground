@@ -33,6 +33,15 @@ import '@uiw/react-markdown-preview/markdown.css';
 
 const { Paragraph, Text } = Typography;
 
+const resolvePopupContainer = (triggerNode: HTMLElement): HTMLElement => {
+  return (
+    (triggerNode.closest('.ant-drawer-body') as HTMLElement | null) ||
+    (triggerNode.closest('.ant-modal-body') as HTMLElement | null) ||
+    triggerNode.parentElement ||
+    document.body
+  );
+};
+
 type EditableModel = ModelConfig | null;
 
 type SettingModalType = 'knowledge' | 'question';
@@ -410,6 +419,7 @@ const SettingsPage: React.FC = () => {
             <Select
               defaultValue="openai"
               style={{ width: 120 }}
+              getPopupContainer={resolvePopupContainer}
               onChange={onTypeChange}
               options={[
                 { value: 'openai', label: 'OpenAI' },

@@ -30,6 +30,15 @@ import {
 
 const { Text } = Typography;
 
+const resolvePopupContainer = (triggerNode: HTMLElement): HTMLElement => {
+  return (
+    (triggerNode.closest(".ant-drawer-body") as HTMLElement | null) ||
+    (triggerNode.closest(".ant-modal-body") as HTMLElement | null) ||
+    triggerNode.parentElement ||
+    document.body
+  );
+};
+
 const ChaptersPage: React.FC = () => {
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [subjectId, setSubjectId] = useState<number | null>(null);
@@ -440,8 +449,12 @@ const ChaptersPage: React.FC = () => {
               <Select
                 style={{ minWidth: 240 }}
                 placeholder="选择科目"
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                getPopupContainer={resolvePopupContainer}
                 value={subjectId ?? undefined}
-                onChange={(value) => setSubjectId(value)}
+                onChange={(value) => setSubjectId(value ?? null)}
                 options={subjects.map((s) => ({
                   label: `${s.name}${s.status === 1 ? "" : "（已停用）"}`,
                   value: s.id,
@@ -499,6 +512,9 @@ const ChaptersPage: React.FC = () => {
               >
                 <Select
                   placeholder="选择科目章节"
+                  showSearch
+                  optionFilterProp="label"
+                  getPopupContainer={resolvePopupContainer}
                   options={chapters.map((item) => ({
                     label: `${item.display_name || item.chapter_name}${item.status === 1 ? "" : "（已停用）"}`,
                     value: item.id,

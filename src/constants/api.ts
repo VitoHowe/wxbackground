@@ -1,8 +1,20 @@
+const normalizeBaseUrl = (url = ''): string => {
+  if (!url) return '';
+  return url.replace(/\/+$/, '');
+};
+
+const resolveApiBaseUrl = (): string => {
+  const envBaseUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL || '');
+  if (envBaseUrl) return envBaseUrl;
+  // 本地开发默认走 wxnode 本地服务，避免误打线上环境。
+  return 'http://127.0.0.1:3001/api';
+};
+
 /**
  * API 基础配置
  */
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://wxnode.mayday.qzz.io/api',
+  BASE_URL: resolveApiBaseUrl(),
   TIMEOUT: 10000,
   TOKEN_KEY: 'wx_admin_token',
   REFRESH_TOKEN_KEY: 'wx_admin_refresh_token',
@@ -51,6 +63,12 @@ export const API_PATHS = {
     `/admin/question-banks/${bankId}/chapters/import-json`,
   ADMIN_QUESTION_BANK_SUBJECT_CHAPTERS: (bankId: number) =>
     `/admin/question-banks/${bankId}/subject-chapters`,
+
+  // 论文与机构管理
+  ADMIN_ESSAY_ORGS: '/admin/essay-orgs',
+  ADMIN_ESSAY_ORG_DETAIL: (orgId: number) => `/admin/essay-orgs/${orgId}`,
+  ADMIN_ESSAYS: '/admin/essays',
+  ADMIN_ESSAY_DETAIL: (essayId: number) => `/admin/essays/${essayId}`,
 
   // 文件相关
   FILES: '/files',

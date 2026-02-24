@@ -79,6 +79,12 @@ request.interceptors.response.use(
     const { data } = response;
     const requestConfig = response.config.metadata as RequestConfig;
 
+    // 创建成功会返回 201，这里统一归一为 200，避免页面层遗漏处理导致不刷新。
+    if (data.code === BUSINESS_CODE.CREATED) {
+      data.code = BUSINESS_CODE.SUCCESS;
+      return response;
+    }
+
     // 检查业务状态码
     if (data.code === BUSINESS_CODE.SUCCESS) {
       return response;

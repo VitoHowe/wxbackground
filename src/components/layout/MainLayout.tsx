@@ -89,6 +89,10 @@ const menuItems: MenuProps['items'] = [
         key: 'qc-images',
         label: '图片管理',
       },
+      {
+        key: 'qc-essays',
+        label: '论文管理',
+      },
     ],
   },
   {
@@ -134,6 +138,7 @@ const menuKeyToPath: Record<string, string> = {
   'qc-banks': '/question-config/banks',
   'qc-template': '/question-config/template',
   'qc-images': '/question-config/images',
+  'qc-essays': '/question-config/essays',
 };
 
 const resolveSelectedMenuKey = (pathname: string): string => {

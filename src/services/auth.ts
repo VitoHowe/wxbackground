@@ -97,7 +97,7 @@ export class AuthService {
     );
 
     // 注册成功后保存 token
-    if (response.code === 201 && response.data) {
+    if ((response.code === 200 || response.code === 201) && response.data) {
       setToken(response.data.accessToken);
       this.setRefreshToken(response.data.refreshToken);
     }

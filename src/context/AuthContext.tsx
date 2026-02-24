@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     try {
       const response = await AuthService.register(params);
-      if (response.code === 201 && response.data) {
+      if ((response.code === 200 || response.code === 201) && response.data) {
         setAuthState({
           isAuthenticated: true,
           user: response.data.user,

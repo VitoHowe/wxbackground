@@ -21,11 +21,9 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type { UploadFile } from "antd/es/upload/interface";
 import {
-  CheckCircleOutlined,
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
-  PoweroffOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
 import { SubjectsService, type SubjectChapterItem, type SubjectItem } from "@/services/subjects";
@@ -33,6 +31,7 @@ import {
   EssayAdminService,
   type AdminEssayItem,
   type EssayOrgItem,
+  type EssayPermissionUserItem,
 } from "@/services/essayAdmin";
 
 const { Search } = Input;
@@ -50,6 +49,17 @@ const statusTag = (status: number) => (
     {status === 1 ? "启用" : "停用"}
   </Tag>
 );
+
+const formatPermissionUserLabel = (user: EssayPermissionUserItem) => {
+  const primary = user.nickname || user.username || `用户#${user.id}`;
+  const extras = [
+    user.username && user.username !== primary ? `@${user.username}` : "",
+    user.role_name ? `(${user.role_name})` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return extras ? `${primary} ${extras}` : primary;
+};
 
 const EssaysPage: React.FC = () => {
   const { message, modal } = App.useApp();
@@ -82,6 +92,14 @@ const EssaysPage: React.FC = () => {
   const [essayForm] = Form.useForm();
   const [essayModalSubjectId, setEssayModalSubjectId] = useState<number | null>(null);
   const [essayModalChapters, setEssayModalChapters] = useState<SubjectChapterItem[]>([]);
+
+  const [permissionSubjectId, setPermissionSubjectId] = useState<number | null>(null);
+  const [permissionUsers, setPermissionUsers] = useState<EssayPermissionUserItem[]>([]);
+  const [permissionUserIds, setPermissionUserIds] = useState<number[]>([]);
+  const [permissionLoading, setPermissionLoading] = useState(false);
+  const [permissionUsersLoading, setPermissionUsersLoading] = useState(false);
+  const [permissionSaving, setPermissionSaving] = useState(false);
+  const [permissionUpdatedAt, setPermissionUpdatedAt] = useState<string | null>(null);
 
   const summary = useMemo(() => {
     const enabled = essays.filter((item) => item.status === 1).length;
@@ -174,10 +192,108 @@ const EssaysPage: React.FC = () => {
     }
   }, [chapterId, keyword, message, orgId, page, pageSize, status, subjectId]);
 
+  const mergePermissionUsers = useCallback((incoming: EssayPermissionUserItem[]) => {
+    setPermissionUsers((prev) => {
+      const merged = new Map<number, EssayPermissionUserItem>();
+      prev.forEach((user) => merged.set(user.id, user));
+      incoming.forEach((user) => merged.set(user.id, user));
+      return Array.from(merged.values());
+    });
+  }, []);
+
+  const fetchPermissionUsers = useCallback(
+    async (keywordValue?: string) => {
+      setPermissionUsersLoading(true);
+      try {
+        const res = await EssayAdminService.listPermissionUsers({
+          page: 1,
+          limit: 200,
+          keyword: keywordValue || undefined,
+        });
+        if (res.code === 200) {
+          const list = res.data?.list || [];
+          if (keywordValue) {
+            mergePermissionUsers(list);
+          } else {
+            setPermissionUsers(list);
+          }
+        } else {
+          message.error(res.message || "获取可授权用户失败");
+        }
+      } catch (error) {
+        message.error(parseError(error, "获取可授权用户失败"));
+      } finally {
+        setPermissionUsersLoading(false);
+      }
+    },
+    [mergePermissionUsers, message]
+  );
+
+  const fetchPermissionDetail = useCallback(
+    async (targetSubjectId: number | null) => {
+      if (!targetSubjectId) {
+        setPermissionUserIds([]);
+        setPermissionUpdatedAt(null);
+        return;
+      }
+      setPermissionLoading(true);
+      try {
+        const res = await EssayAdminService.getEssayPermissions(targetSubjectId);
+        if (res.code === 200) {
+          const data = res.data;
+          setPermissionUserIds((data?.user_ids || []).map((id) => Number(id)));
+          setPermissionUpdatedAt(data?.updated_at || null);
+          mergePermissionUsers(data?.users || []);
+        } else {
+          message.error(res.message || "获取论文权限失败");
+        }
+      } catch (error) {
+        message.error(parseError(error, "获取论文权限失败"));
+      } finally {
+        setPermissionLoading(false);
+      }
+    },
+    [mergePermissionUsers, message]
+  );
+
+  const savePermission = useCallback(async () => {
+    if (!permissionSubjectId) {
+      message.warning("请先选择科目");
+      return;
+    }
+    setPermissionSaving(true);
+    try {
+      const res = await EssayAdminService.saveEssayPermissions(permissionSubjectId, permissionUserIds);
+      if (res.code === 200) {
+        setPermissionUserIds((res.data?.user_ids || []).map((id) => Number(id)));
+        setPermissionUpdatedAt(res.data?.updated_at || null);
+        mergePermissionUsers(res.data?.users || []);
+        message.success("论文权限已保存");
+      } else {
+        message.error(res.message || "保存论文权限失败");
+      }
+    } catch (error) {
+      message.error(parseError(error, "保存论文权限失败"));
+    } finally {
+      setPermissionSaving(false);
+    }
+  }, [mergePermissionUsers, message, permissionSubjectId, permissionUserIds]);
+
   useEffect(() => {
     fetchSubjects();
     fetchOrgs();
-  }, [fetchOrgs, fetchSubjects]);
+    fetchPermissionUsers();
+  }, [fetchOrgs, fetchPermissionUsers, fetchSubjects]);
+
+  useEffect(() => {
+    if (!permissionSubjectId && subjects.length > 0) {
+      setPermissionSubjectId(subjects[0].id);
+    }
+  }, [permissionSubjectId, subjects]);
+
+  useEffect(() => {
+    fetchPermissionDetail(permissionSubjectId);
+  }, [fetchPermissionDetail, permissionSubjectId]);
 
   useEffect(() => {
     fetchChapters(subjectId);
@@ -535,6 +651,63 @@ const EssaysPage: React.FC = () => {
             { key: "org", title: "机构数", value: summary.orgCount, tone: "accent" },
           ]}
         />
+
+        <AppCard title="论文可见权限">
+          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            <Text type="secondary">
+              仅已授权用户可以看到论文列表与正文，未授权用户在小程序端返回空结果。
+            </Text>
+            <Space wrap style={{ width: "100%" }}>
+              <Select
+                style={{ minWidth: 220 }}
+                placeholder="选择科目"
+                value={permissionSubjectId ?? undefined}
+                onChange={(value) => setPermissionSubjectId(value ?? null)}
+                options={subjects.map((item) => ({
+                  label: `${item.name}${item.status === 1 ? "" : "（已停用）"}`,
+                  value: item.id,
+                }))}
+              />
+              <Select
+                mode="multiple"
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                style={{ minWidth: 480, flex: 1 }}
+                placeholder={permissionSubjectId ? "选择可见用户" : "请先选择科目"}
+                disabled={!permissionSubjectId}
+                loading={permissionUsersLoading || permissionLoading}
+                value={permissionUserIds}
+                onChange={(values) => setPermissionUserIds(values.map((value) => Number(value)))}
+                onSearch={(value) => {
+                  if (value.trim()) {
+                    fetchPermissionUsers(value.trim());
+                  }
+                }}
+                options={permissionUsers.map((user) => ({
+                  label: formatPermissionUserLabel(user),
+                  value: user.id,
+                }))}
+              />
+              <Button
+                onClick={() => {
+                  fetchPermissionUsers();
+                  fetchPermissionDetail(permissionSubjectId);
+                }}
+                loading={permissionLoading}
+              >
+                刷新授权
+              </Button>
+              <Button type="primary" onClick={savePermission} loading={permissionSaving}>
+                保存授权
+              </Button>
+            </Space>
+            <Space wrap>
+              <Text type="secondary">已授权用户：{permissionUserIds.length} 人</Text>
+              {permissionUpdatedAt ? <Text type="secondary">最近更新时间：{permissionUpdatedAt}</Text> : null}
+            </Space>
+          </Space>
+        </AppCard>
 
         <AppCard title="机构管理" extra={<Button onClick={openCreateOrgModal}>新增机构</Button>}>
           <Table

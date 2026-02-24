@@ -39,6 +39,22 @@ export interface EssayListPagination {
   totalPages: number;
 }
 
+export interface EssayPermissionUserItem {
+  id: number;
+  nickname?: string | null;
+  username?: string | null;
+  phone?: string | null;
+  status: number;
+  role_name?: string | null;
+}
+
+export interface SubjectEssayPermission {
+  subject_id: number;
+  user_ids: number[];
+  users: EssayPermissionUserItem[];
+  updated_at?: string | null;
+}
+
 interface EssayOrgPayload {
   name: string;
   description?: string | null;
@@ -62,6 +78,13 @@ interface EssayListParams {
   subjectChapterId?: number;
   status?: number;
   keyword?: string;
+}
+
+interface EssayPermissionUsersParams {
+  page?: number;
+  limit?: number;
+  keyword?: string;
+  includeDisabled?: boolean;
 }
 
 const appendIfPresent = (formData: FormData, key: string, value: unknown) => {
@@ -113,6 +136,46 @@ export class EssayAdminService {
         status: params.status,
         keyword: params.keyword,
       },
+    });
+    return res.data;
+  }
+
+  static async listPermissionUsers(
+    params: EssayPermissionUsersParams = {}
+  ): Promise<
+    ApiResponse<{
+      list: EssayPermissionUserItem[];
+      total: number;
+      pagination: EssayListPagination;
+    }>
+  > {
+    const res = await request.get<
+      ApiResponse<{ list: EssayPermissionUserItem[]; total: number; pagination: EssayListPagination }>
+    >(API_PATHS.ADMIN_ESSAY_PERMISSION_USERS, {
+      params: {
+        page: params.page ?? 1,
+        limit: params.limit ?? 200,
+        keyword: params.keyword || undefined,
+        includeDisabled: params.includeDisabled ? '1' : undefined,
+      },
+    });
+    return res.data;
+  }
+
+  static async getEssayPermissions(subjectId: number): Promise<ApiResponse<SubjectEssayPermission>> {
+    const res = await request.get<ApiResponse<SubjectEssayPermission>>(API_PATHS.ADMIN_ESSAY_PERMISSIONS, {
+      params: { subjectId },
+    });
+    return res.data;
+  }
+
+  static async saveEssayPermissions(
+    subjectId: number,
+    userIds: number[]
+  ): Promise<ApiResponse<SubjectEssayPermission>> {
+    const res = await request.put<ApiResponse<SubjectEssayPermission>>(API_PATHS.ADMIN_ESSAY_PERMISSIONS, {
+      subjectId,
+      userIds,
     });
     return res.data;
   }

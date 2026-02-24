@@ -69,6 +69,8 @@ export const API_PATHS = {
   ADMIN_ESSAY_ORG_DETAIL: (orgId: number) => `/admin/essay-orgs/${orgId}`,
   ADMIN_ESSAYS: '/admin/essays',
   ADMIN_ESSAY_DETAIL: (essayId: number) => `/admin/essays/${essayId}`,
+  ADMIN_ESSAY_PERMISSION_USERS: '/admin/essay-permission-users',
+  ADMIN_ESSAY_PERMISSIONS: '/admin/essay-permissions',
 
   // 文件相关
   FILES: '/files',

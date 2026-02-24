@@ -1,5 +1,5 @@
 # ===================================
-# Stage 1: Builder - build Next.js
+# Stage 1: Builder - build Next.js standalone output
 # ===================================
 FROM node:20-bookworm-slim AS builder
 
@@ -22,12 +22,6 @@ ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 
 RUN pnpm build
 
-# Keep only production dependencies for runtime.
-# NOTE: `pnpm prune --prod` may re-run lifecycle scripts (e.g. `prepare`).
-# This project has `prepare: husky install` but husky is a devDependency,
-# so pruning first can make `husky` unavailable and fail the build.
-RUN pnpm prune --prod --ignore-scripts
-
 # ===================================
 # Stage 2: Production - runtime
 # ===================================
@@ -39,11 +33,10 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3007
 
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
+# Next standalone server contains the minimal runtime dependencies.
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/next.config.ts ./next.config.ts
 
 RUN chown -R node:node /app
 USER node
@@ -53,4 +46,4 @@ EXPOSE 3007
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3007/api/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
-CMD ["node_modules/.bin/next", "start", "-p", "3007"]
+CMD ["node", "server.js"]

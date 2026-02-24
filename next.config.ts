@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   experimental: {},
   eslint: {
     // Docker/CI builds shouldn't be blocked by local lint rules.
